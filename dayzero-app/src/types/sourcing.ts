@@ -40,18 +40,18 @@ export interface SourcedProduct {
 }
 
 export const SOURCING_PROVIDERS: { name: SourcingProvider; logo: string }[] = [
-    { name: '올리브영', logo: '/올리브영.png' },
-    { name: '쿠팡', logo: '/쿠팡.png' },
-    { name: '네이버 스마트스토어', logo: '/스마트스토어.png' },
-    { name: 'G마켓', logo: '/Gmarket.png' },
-    { name: '다이소', logo: '/다이소.png' },
-    { name: 'yes24', logo: '/yes24.png' },
-    { name: '알라딘', logo: '/알라딘.png' },
-    { name: 'Ktown4u', logo: '/Ktown4U.png' },
-    { name: '위버스샵', logo: '/위버스샵.png' },
-    { name: '메이크스타', logo: '/메이크스타.png' },
-    { name: '위치폼', logo: '/로고 총합.png' }, // Fallback for 위치폼 since it wasn't listed, using 로고 총합 as placeholder
-    { name: 'FANS', logo: '/FANS.png' },
+    { name: '올리브영', logo: '/logos/oliveyoung.png' },
+    { name: '쿠팡', logo: '/logos/coupang.png' },
+    { name: '네이버 스마트스토어', logo: '/logos/smartstore.png' },
+    { name: 'G마켓', logo: '/logos/gmarket.png' },
+    { name: '다이소', logo: '/logos/daiso.png' },
+    { name: 'yes24', logo: '/logos/yes24.png' },
+    { name: '알라딘', logo: '/logos/aladin.png' },
+    { name: 'Ktown4u', logo: '/logos/ktown4u.png' },
+    { name: '위버스샵', logo: '/logos/weverseshop.png' },
+    { name: '메이크스타', logo: '/logos/makestar.png' },
+    { name: '위치폼', logo: '/logos/witchform.png' },
+    { name: 'FANS', logo: '/logos/fans.png' },
 ];
 
 export const MOCK_URL_TO_PROVIDER = (url: string): SourcingProvider | null => {

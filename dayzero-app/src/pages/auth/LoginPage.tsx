@@ -45,7 +45,7 @@ export default function LoginPage() {
   };
 
   const handleSuccess = () => {
-    navigate('/onboarding/step1');
+    navigate('/qoo10-connect');
   };
 
   return (

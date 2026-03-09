@@ -102,7 +102,7 @@ export default function BasicInfoPage() {
 
     const handleNext = () => {
         if (!isNextEnabled()) return;
-        navigate('/onboarding/step3');
+        navigate('/basic-margin');
     };
 
     const inputStyles = {
@@ -366,7 +366,7 @@ export default function BasicInfoPage() {
                         </button>
 
                         <button
-                            onClick={() => navigate('/onboarding/step1')}
+                            onClick={() => navigate('/qoo10-connect')}
                             style={{
                                 width: '100%',
                                 height: '52px',

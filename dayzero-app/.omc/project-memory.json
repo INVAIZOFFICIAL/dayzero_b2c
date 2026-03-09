@@ -144,8 +144,14 @@
   "hotPaths": [
     {
       "path": "src/pages/onboarding/BasicMarginPage.tsx",
-      "accessCount": 20,
-      "lastAccessed": 1773065851526,
+      "accessCount": 21,
+      "lastAccessed": 1773098412714,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/onboarding/BasicInfoPage.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773098411872,
       "type": "file"
     },
     {
@@ -167,10 +173,28 @@
       "type": "file"
     },
     {
+      "path": "src/pages/auth/LoginPage.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773098392031,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/onboarding/Qoo10ConnectPage.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773098403671,
+      "type": "file"
+    },
+    {
       "path": "src/pages/SourcingPage.tsx",
       "accessCount": 1,
       "lastAccessed": 1773064604409,
       "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 1,
+      "lastAccessed": 1773098381275,
+      "type": "directory"
     }
   ],
   "userDirectives": []

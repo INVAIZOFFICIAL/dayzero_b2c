@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { GlobalNavigationBar } from '../common/GlobalNavigationBar';
+import { Sidebar } from './Sidebar';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -9,23 +9,21 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return (
         <div style={{
             minHeight: '100vh',
-            background: '#F9FAFB',
+            background: '#FFFFFF', // Setting main area background to white as sidebar is F9FAFB
             fontFamily: 'Pretendard, -apple-system, sans-serif',
             display: 'flex',
-            flexDirection: 'column'
         }}>
-            <GlobalNavigationBar />
+            <Sidebar />
 
             <main style={{
                 flex: 1,
-                padding: '40px',
-                maxWidth: '1200px',
-                width: '100%',
-                margin: '0 auto',
-                display: 'flex',
-                flexDirection: 'column'
+                marginLeft: '280px', // width of the sidebar
+                padding: '48px 64px',
+                minWidth: 0, // prevents flex item from overflowing
             }}>
-                {children}
+                <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+                    {children}
+                </div>
             </main>
         </div>
     );

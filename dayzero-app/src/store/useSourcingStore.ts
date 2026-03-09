@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SourcingJob, AutoSchedule, SourcedProduct, SourcingProvider } from '../types/sourcing';
+import type { SourcingJob, AutoSchedule, SourcedProduct, SourcingProvider } from '../types/sourcing';
 
 interface SourcingState {
     jobs: SourcingJob[];

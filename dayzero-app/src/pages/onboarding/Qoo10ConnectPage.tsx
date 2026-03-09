@@ -323,7 +323,7 @@ export default function Qoo10ConnectPage() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                             <button
-                                onClick={() => navigate('/onboarding/step2')}
+                                onClick={() => navigate('/basic-info')}
                                 style={{
                                     width: '100%',
                                     height: '52px',

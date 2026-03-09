@@ -229,7 +229,7 @@ export default function BasicMarginPage() {
                                     <ArrowRight size={18} />
                                 </button>
                                 <button
-                                    onClick={() => navigate('/onboarding/step2')}
+                                    onClick={() => navigate('/basic-info')}
                                     style={{
                                         width: '100%', height: '52px',
                                         background: 'transparent', color: '#6B7684',
