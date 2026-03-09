@@ -1,0 +1,177 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773064527965,
+  "projectRoot": "/Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "7.3.1",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc -b && vite build",
+      "lint": "eslint .",
+      "preview": "vite preview"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 5,
+      "lastAccessed": 1773064527943,
+      "keyFiles": [
+        "DayZero Logo.png",
+        "Qoo10.png",
+        "dayzero-logo.png",
+        "index.html",
+        "vite.svg"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 4,
+      "lastAccessed": 1773064527945,
+      "keyFiles": [
+        "DayZero Logo.png",
+        "Qoo10.png",
+        "dayzero-logo.png",
+        "vite.svg"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 4,
+      "lastAccessed": 1773064527945,
+      "keyFiles": [
+        "App.css",
+        "App.tsx",
+        "index.css",
+        "main.tsx"
+      ]
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 2,
+      "lastAccessed": 1773064527946,
+      "keyFiles": [
+        "index-D8gGhhvy.css",
+        "index-QR8oCVoM.js"
+      ]
+    },
+    "src/assets": {
+      "path": "src/assets",
+      "purpose": "Static assets",
+      "fileCount": 1,
+      "lastAccessed": 1773064527946,
+      "keyFiles": [
+        "react.svg"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1773064527946,
+      "keyFiles": []
+    },
+    "src/pages": {
+      "path": "src/pages",
+      "purpose": "Page components",
+      "fileCount": 0,
+      "lastAccessed": 1773064527946,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/pages/onboarding/BasicMarginPage.tsx",
+      "accessCount": 20,
+      "lastAccessed": 1773065851526,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 3,
+      "lastAccessed": 1773065587617,
+      "type": "directory"
+    },
+    {
+      "path": "src/App.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773064615704,
+      "type": "file"
+    },
+    {
+      "path": "src/index.css",
+      "accessCount": 2,
+      "lastAccessed": 1773065755959,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/SourcingPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773064604409,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

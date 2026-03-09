@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"npm run build 2>&1\",\"timeout\":60000,\"description\":\"Build check\"}",
+  "error": "Exit code 2\n\n> dayzero-app@0.0.0 build\n> tsc -b && vite build\n\nsrc/pages/onboarding/BasicMarginPage.tsx(17,12): error TS6133: 'showSim' is declared but its value is never read.\nsrc/pages/onboarding/BasicMarginPage.tsx(17,21): error TS6133: 'setShowSim' is declared but its value is never read.",
+  "timestamp": "2026-03-09T13:49:39.399Z",
+  "retry_count": 1
+}
