@@ -1,7 +1,7 @@
 {
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"npm run build 2>&1\",\"timeout\":60000,\"description\":\"Build check\"}",
-  "error": "Exit code 2\n\n> dayzero-app@0.0.0 build\n> tsc -b && vite build\n\nsrc/pages/onboarding/BasicMarginPage.tsx(17,12): error TS6133: 'showSim' is declared but its value is never read.\nsrc/pages/onboarding/BasicMarginPage.tsx(17,21): error TS6133: 'setShowSim' is declared but its value is never read.",
-  "timestamp": "2026-03-09T13:49:39.399Z",
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"/Users/invaiz/Documents/develop/dayzero_B2C/docs/04_화면별 기능 명세서.md\"}",
+  "error": "File content (50957 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+  "timestamp": "2026-03-09T14:23:42.909Z",
   "retry_count": 1
 }
