@@ -133,6 +133,7 @@ export default function UrlSourcingPage() {
             addJob({
                 id: `job-url-${Date.now()}`,
                 type: 'URL',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 provider: urlsSnapshot.find(p => !p.error)?.provider || '기타' as any,
                 categorySummary: `${successProcessed}건 수동 수집`,
                 status: 'completed',
@@ -151,6 +152,7 @@ export default function UrlSourcingPage() {
         const current = parsedUrls.find(p => p.id === id);
         if (current && current.provider) {
             const mockProduct: SourcedProduct = {
+                // eslint-disable-next-line react-hooks/purity
                 id: `prod-retry-${Date.now()}`,
                 jobId: 'manual-url-job',
                 provider: current.provider,

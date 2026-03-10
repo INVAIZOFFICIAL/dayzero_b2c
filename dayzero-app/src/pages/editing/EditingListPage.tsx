@@ -1,0 +1,304 @@
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { MainLayout } from '../../components/layout/MainLayout';
+import { useEditingStore } from '../../store/useEditingStore';
+import { SOURCING_PROVIDERS } from '../../types/sourcing';
+import type { EditTabFilter } from '../../types/editing';
+import { ProductListItem } from './components/ProductListItem';
+import { BulkActionBar } from './components/BulkActionBar';
+import { colors, font, radius, spacing } from '../../design/tokens';
+
+const TAB_LABELS: { key: EditTabFilter; label: string }[] = [
+    { key: 'all', label: '전체' },
+    { key: 'needs_translation', label: '번역 필요' },
+    { key: 'translated', label: '번역 완료' },
+];
+
+const Checkbox: React.FC<{ checked: boolean; onClick: () => void }> = ({ checked, onClick }) => (
+    <div
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        style={{
+            width: '20px', height: '20px', flexShrink: 0,
+            borderRadius: radius.xs,
+            border: `2px solid ${checked ? colors.primary : colors.border.light}`,
+            background: checked ? colors.primary : colors.bg.surface,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', transition: 'all 0.15s',
+        }}
+    >
+        {checked && (
+            <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
+                <path d="M1 3.5L4 6.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        )}
+    </div>
+);
+
+const SortHeader: React.FC<{
+    label: string;
+    sortKey: SortKey;
+    active: SortKey;
+    dir: SortDir;
+    onSort: (k: SortKey) => void;
+    style?: React.CSSProperties;
+}> = ({ label, sortKey, active, dir, onSort, style }) => {
+    const isActive = active === sortKey;
+    return (
+        <div
+            onClick={() => onSort(sortKey)}
+            style={{
+                ...style,
+                display: 'flex', alignItems: 'center', gap: '3px',
+                fontSize: font.size.xs, fontWeight: 600,
+                color: colors.text.muted,
+                cursor: 'pointer', userSelect: 'none',
+            }}
+        >
+            {label}
+            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                <ChevronUp size={10} style={{ opacity: isActive && dir === 'asc' ? 1 : 0.25 }} />
+                <ChevronDown size={10} style={{ opacity: isActive && dir === 'desc' ? 1 : 0.25 }} />
+            </span>
+        </div>
+    );
+};
+
+type SortKey = 'createdAt' | 'salePriceJpy' | 'title';
+type SortDir = 'asc' | 'desc';
+
+export default function EditingListPage() {
+    const navigate = useNavigate();
+    const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+        else { setSortKey(key); setSortDir(key === 'createdAt' ? 'desc' : 'asc'); }
+    };
+    const {
+        products, selectedProductIds, activeTab, providerFilter, searchKeyword,
+        setActiveTab, setProviderFilter, setSearchKeyword,
+        toggleSelectProduct, selectAll, clearSelection,
+        openTranslationModal, deleteProducts,
+    } = useEditingStore();
+
+    // 탭별 건수 (providerFilter 무관하게 계산)
+    const counts = useMemo(() => ({
+        all: products.length,
+        needs_translation: products.filter((p) => p.translationStatus === 'pending' || p.translationStatus === 'failed').length,
+        translated: products.filter((p) => p.translationStatus === 'completed').length,
+    }), [products]);
+
+    // 탭 기준 필터링 (소싱처 필터 전)
+    const tabFiltered = useMemo(() => products.filter((p) => {
+        if (activeTab === 'needs_translation') return p.translationStatus === 'pending' || p.translationStatus === 'failed';
+        if (activeTab === 'translated') return p.translationStatus === 'completed';
+        return true;
+    }), [products, activeTab]);
+
+    // 현재 탭에 존재하는 소싱처만 추출
+    const availableProviders = useMemo(() => {
+        const set = new Set(tabFiltered.map((p) => p.provider));
+        return SOURCING_PROVIDERS.filter((sp) => set.has(sp.name));
+    }, [tabFiltered]);
+
+    // 최종 필터링
+    const filtered = useMemo(() => tabFiltered.filter((p) => {
+        if (providerFilter !== '전체' && p.provider !== providerFilter) return false;
+        if (searchKeyword && !p.titleKo.includes(searchKeyword) && !(p.titleJa ?? '').includes(searchKeyword)) return false;
+        return true;
+    }), [tabFiltered, providerFilter, searchKeyword]);
+
+    const sorted = useMemo(() => [...filtered].sort((a, b) => {
+        let cmp = 0;
+        if (sortKey === 'createdAt') cmp = a.createdAt.localeCompare(b.createdAt);
+        else if (sortKey === 'salePriceJpy') cmp = a.salePriceJpy - b.salePriceJpy;
+        else if (sortKey === 'title') cmp = (a.titleJa ?? a.titleKo).localeCompare(b.titleJa ?? b.titleKo);
+        return sortDir === 'asc' ? cmp : -cmp;
+    }), [filtered, sortKey, sortDir]);
+
+    const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedProductIds.includes(p.id));
+
+    const handleSelectAll = () => {
+        if (allFilteredSelected) clearSelection();
+        else selectAll(filtered.map((p) => p.id));
+    };
+
+    return (
+        <MainLayout>
+            <style>{`
+                @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+            `}</style>
+
+            {/* 페이지 헤더 */}
+            <div style={{ marginBottom: spacing['6'], animation: 'fadeInUp 0.6s ease' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing['3'], marginBottom: '6px' }}>
+                    <h1 style={{ fontSize: font.size['2xl'], fontWeight: 700, color: colors.text.primary }}>수집된 상품</h1>
+                    <span style={{
+                        padding: '4px 10px', borderRadius: radius.full,
+                        background: colors.bg.subtle, fontSize: font.size.sm,
+                        fontWeight: 700, color: colors.text.secondary,
+                    }}>
+                        {products.length}건
+                    </span>
+                </div>
+                <p style={{ fontSize: font.size.md, color: colors.text.tertiary }}>
+                    번역 후 Qoo10에 등록할 상품을 편집하고 등록하세요.
+                </p>
+            </div>
+
+            {/* 메인 탭 */}
+            <div style={{ display: 'flex', gap: '2px', borderBottom: `2px solid ${colors.border.default}`, marginBottom: spacing['4'] }}>
+                {TAB_LABELS.map(({ key, label }) => (
+                    <button
+                        key={key}
+                        onClick={() => { setActiveTab(key); setProviderFilter('전체'); }}
+                        style={{
+                            padding: `${spacing['3']} ${spacing['4']}`,
+                            background: 'none', border: 'none',
+                            borderBottom: `2px solid ${activeTab === key ? colors.primary : 'transparent'}`,
+                            marginBottom: '-2px',
+                            fontSize: font.size.base,
+                            fontWeight: activeTab === key ? 700 : 500,
+                            color: activeTab === key ? colors.primary : colors.text.tertiary,
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: spacing['2'],
+                            transition: 'color 0.15s',
+                        }}
+                    >
+                        {label}
+                        <span style={{
+                            padding: '2px 7px', borderRadius: radius.full,
+                            fontSize: font.size.xs, fontWeight: 700,
+                            background: activeTab === key ? colors.primary : colors.bg.subtle,
+                            color: activeTab === key ? '#fff' : colors.text.muted,
+                        }}>
+                            {counts[key]}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
+            {/* 검색 */}
+            <div style={{
+                display: 'flex', alignItems: 'center', gap: spacing['2'],
+                padding: `0 ${spacing['3']}`,
+                border: `1px solid ${colors.border.default}`,
+                borderRadius: radius.md, background: colors.bg.surface,
+                marginBottom: spacing['3'],
+            }}>
+                <Search size={16} color={colors.text.muted} />
+                <input
+                    type="text"
+                    placeholder="상품명으로 검색"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    style={{
+                        flex: 1, border: 'none', outline: 'none',
+                        fontSize: font.size.base, color: colors.text.primary,
+                        padding: `${spacing['3']} 0`, background: 'transparent',
+                    }}
+                />
+            </div>
+
+            {/* 소싱처 필터 (소싱 페이지와 동일한 디자인) */}
+            {availableProviders.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: spacing['4'], overflowX: 'auto', paddingBottom: '4px' }}>
+                    {['전체', ...availableProviders.map((p) => p.name)].map((filter) => {
+                        const isActive = providerFilter === filter;
+                        const logo = SOURCING_PROVIDERS.find((p) => p.name === filter)?.logo;
+                        return (
+                            <button
+                                key={filter}
+                                onClick={() => setProviderFilter(filter)}
+                                style={{
+                                    padding: filter === '전체' ? '8px 16px' : (isActive ? '8px 16px' : '8px'),
+                                    borderRadius: '20px',
+                                    fontSize: '14px',
+                                    fontWeight: isActive ? 600 : 500,
+                                    color: isActive ? colors.primary : colors.text.tertiary,
+                                    background: isActive ? colors.primaryLight : colors.bg.surface,
+                                    border: isActive ? `1px solid ${colors.primaryLight}` : `1px solid ${colors.border.default}`,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: filter === '전체' ? '6px' : (isActive ? '6px' : '0px'),
+                                }}
+                            >
+                                <div style={{
+                                    width: isActive ? '14px' : '0px',
+                                    opacity: isActive ? 1 : 0,
+                                    overflow: 'hidden',
+                                    transition: 'all 0.3s ease',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    <Check size={14} strokeWidth={3} style={{ flexShrink: 0 }} />
+                                </div>
+
+                                {filter !== '전체' && logo && (
+                                    <img src={logo} alt={filter} style={{ width: '16px', height: '16px', borderRadius: '4px', objectFit: 'cover' }} />
+                                )}
+
+                                <div style={{
+                                    maxWidth: filter === '전체' || isActive ? '100px' : '0px',
+                                    opacity: filter === '전체' || isActive ? 1 : 0,
+                                    overflow: 'hidden',
+                                    transition: 'all 0.3s ease',
+                                    display: 'flex', alignItems: 'center',
+                                }}>
+                                    {filter}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* 컬럼 헤더 (전체 선택 체크박스 포함) */}
+            <div style={{
+                display: 'flex', alignItems: 'center', gap: spacing['4'],
+                padding: `0 ${spacing['5']}`, marginBottom: spacing['2'],
+            }}>
+                <Checkbox checked={allFilteredSelected} onClick={handleSelectAll} />
+                <div style={{ width: '48px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>이미지</div>
+                <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 3 }} />
+                <div style={{ flex: 2, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
+                <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '90px', flexShrink: 0 }} />
+                <div style={{ width: '90px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>원가</div>
+                <SortHeader label="등록일" sortKey="createdAt" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '72px', flexShrink: 0 }} />
+            </div>
+
+            {/* 상품 목록 */}
+            {filtered.length === 0 ? (
+                <div key={activeTab} style={{ textAlign: 'center', padding: `${spacing['12']} 0`, color: colors.text.muted, fontSize: font.size.base, animation: 'fadeInUp 0.4s ease' }}>
+                    {searchKeyword || providerFilter !== '전체' ? '검색 조건에 맞는 상품이 없어요.' : '수집된 상품이 없어요.'}
+                </div>
+            ) : (
+                <div key={activeTab} style={{ display: 'flex', flexDirection: 'column', gap: spacing['2'], paddingBottom: '100px', animation: 'fadeInUp 0.4s ease' }}>
+                    {sorted.map((product) => (
+                        <ProductListItem
+                            key={product.id}
+                            product={product}
+                            selected={selectedProductIds.includes(product.id)}
+                            onToggle={() => toggleSelectProduct(product.id)}
+                            onClick={() => navigate(`/editing/${product.id}`)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            <BulkActionBar
+                selectedCount={selectedProductIds.length}
+                translateCount={products.filter((p) => selectedProductIds.includes(p.id) && (p.translationStatus === 'pending' || p.translationStatus === 'failed')).length}
+                registerCount={products.filter((p) => selectedProductIds.includes(p.id) && p.translationStatus === 'completed').length}
+                onTranslate={openTranslationModal}
+                onRegister={() => { }}
+                onDelete={() => deleteProducts(selectedProductIds)}
+                onClear={clearSelection}
+            />
+        </MainLayout>
+    );
+}

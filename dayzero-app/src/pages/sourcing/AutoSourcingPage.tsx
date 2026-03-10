@@ -470,6 +470,7 @@ export default function AutoSourcingPage() {
                                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px', tableLayout: 'fixed' }}>
                                             <tbody>
                                                 {Array.from({ length: 25 }, (_, i) => {
+                                                    // eslint-disable-next-line react-hooks/purity
                                                     const price = Math.floor(Math.random() * 5 + 1) * 10000 + Math.floor(Math.random() * 9) * 1000;
                                                     const realisticTitle = generateRealisticTitle(providerSettings[0]?.provider || '', providerSettings[0]?.category || '', i);
                                                     return (

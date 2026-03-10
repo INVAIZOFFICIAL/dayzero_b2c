@@ -131,15 +131,69 @@
   },
   "hotPaths": [
     {
+      "path": "docs/06_편집파트_개발_Plan.md",
+      "accessCount": 8,
+      "lastAccessed": 1773154403040,
+      "type": "file"
+    },
+    {
       "path": "AGENTS.md",
       "accessCount": 3,
       "lastAccessed": 1773122857833,
       "type": "file"
     },
     {
+      "path": "dayzero-app/src/types/sourcing.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773154634026,
+      "type": "file"
+    },
+    {
       "path": "dayzero-app/src/design/tokens.ts",
       "accessCount": 1,
       "lastAccessed": 1773122821648,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/App.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773137119278,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/SourcingPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773137177270,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/sourcing/AutoSourcingPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773137177582,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/store/useSourcingStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773153331733,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/types/editing.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773154646191,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/mock/editingMock.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773154742746,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/store/useEditingStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773154762237,
       "type": "file"
     }
   ],

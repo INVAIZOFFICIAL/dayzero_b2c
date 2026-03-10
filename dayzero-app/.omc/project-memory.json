@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1773064527965,
+  "lastScanned": 1773157046126,
   "projectRoot": "/Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app",
   "techStack": {
     "languages": [
@@ -66,7 +66,10 @@
       "public",
       "src"
     ],
-    "gitBranches": null
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [],
   "directoryMap": {
@@ -74,7 +77,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 5,
-      "lastAccessed": 1773064527943,
+      "lastAccessed": 1773157046103,
       "keyFiles": [
         "DayZero Logo.png",
         "Qoo10.png",
@@ -87,7 +90,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 4,
-      "lastAccessed": 1773064527945,
+      "lastAccessed": 1773157046104,
       "keyFiles": [
         "DayZero Logo.png",
         "Qoo10.png",
@@ -99,7 +102,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1773064527945,
+      "lastAccessed": 1773157046106,
       "keyFiles": [
         "App.css",
         "App.tsx",
@@ -111,17 +114,17 @@
       "path": "dist/assets",
       "purpose": "Static assets",
       "fileCount": 2,
-      "lastAccessed": 1773064527946,
+      "lastAccessed": 1773157046106,
       "keyFiles": [
-        "index-D8gGhhvy.css",
-        "index-QR8oCVoM.js"
+        "index-BE9t8o-G.js",
+        "index-Bjxh_95e.css"
       ]
     },
     "src/assets": {
       "path": "src/assets",
       "purpose": "Static assets",
       "fileCount": 1,
-      "lastAccessed": 1773064527946,
+      "lastAccessed": 1773157046107,
       "keyFiles": [
         "react.svg"
       ]
@@ -130,118 +133,114 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 0,
-      "lastAccessed": 1773064527946,
+      "lastAccessed": 1773157046107,
       "keyFiles": []
     },
     "src/pages": {
       "path": "src/pages",
       "purpose": "Page components",
-      "fileCount": 0,
-      "lastAccessed": 1773064527946,
-      "keyFiles": []
+      "fileCount": 1,
+      "lastAccessed": 1773157046107,
+      "keyFiles": [
+        "SourcingPage.tsx"
+      ]
     }
   },
   "hotPaths": [
     {
-      "path": "src/pages/onboarding/BasicMarginPage.tsx",
-      "accessCount": 21,
-      "lastAccessed": 1773098412714,
-      "type": "file"
-    },
-    {
-      "path": "src/store/useSourcingStore.ts",
-      "accessCount": 7,
-      "lastAccessed": 1773106305790,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/SourcingPage.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1773127538012,
+      "path": "src/pages/editing/EditingListPage.tsx",
+      "accessCount": 24,
+      "lastAccessed": 1773159983039,
       "type": "file"
     },
     {
       "path": "src/pages/sourcing/components/UrlSourcingContent.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1773127770309,
+      "accessCount": 15,
+      "lastAccessed": 1773159603397,
       "type": "file"
     },
     {
-      "path": "src/pages/onboarding/BasicInfoPage.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1773098411872,
-      "type": "file"
-    },
-    {
-      "path": "",
-      "accessCount": 4,
-      "lastAccessed": 1773100333384,
-      "type": "directory"
-    },
-    {
-      "path": "src/index.css",
-      "accessCount": 4,
-      "lastAccessed": 1773100748059,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1773127657157,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/sourcing/UrlSourcingPage.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1773100909126,
+      "path": "src/pages/editing/components/BulkActionBar.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1773158396109,
       "type": "file"
     },
     {
       "path": "src/components/layout/Sidebar.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1773159360561,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/sourcing/UrlSourcingPage.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1773159559133,
+      "type": "file"
+    },
+    {
+      "path": "src/components/onboarding/OnboardingContext.tsx",
       "accessCount": 3,
-      "lastAccessed": 1773106182910,
+      "lastAccessed": 1773159354521,
       "type": "file"
     },
     {
-      "path": "src/design/tokens.ts",
+      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
       "accessCount": 3,
-      "lastAccessed": 1773127491024,
-      "type": "file"
-    },
-    {
-      "path": "src/App.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773064615704,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/auth/LoginPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773098392031,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/onboarding/Qoo10ConnectPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773098403671,
-      "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 2,
-      "lastAccessed": 1773100337673,
-      "type": "directory"
-    },
-    {
-      "path": "src/components/layout/MainLayout.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773100812062,
+      "lastAccessed": 1773159406437,
       "type": "file"
     },
     {
       "path": "src/components/common/NotificationPanel.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773158945684,
+      "type": "file"
+    },
+    {
+      "path": "src/mock/authMock.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773159344705,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/editing/components/ProductListItem.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773159367434,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/editing/components/CollectionProgressBanner.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773159378155,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/onboarding/BasicInfoPage.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773159383843,
+      "type": "file"
+    },
+    {
+      "path": "src/components/layout/MainLayout.tsx",
       "accessCount": 1,
-      "lastAccessed": 1773100804204,
+      "lastAccessed": 1773158871160,
+      "type": "file"
+    },
+    {
+      "path": "src/store/useSourcingStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773158887895,
+      "type": "directory"
+    },
+    {
+      "path": "src/types/sourcing.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773159453601,
+      "type": "directory"
+    },
+    {
+      "path": "src/index.css",
+      "accessCount": 1,
+      "lastAccessed": 1773159962782,
       "type": "file"
     }
   ],

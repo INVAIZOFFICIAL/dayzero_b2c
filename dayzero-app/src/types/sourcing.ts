@@ -31,6 +31,7 @@ export interface SourcedProduct {
     jobId: string;
     provider: SourcingProvider;
     title: string;
+    titleJa?: string | null;
     thumbnailUrl: string;
     originalPriceKrw: number;
     optionCount: number;

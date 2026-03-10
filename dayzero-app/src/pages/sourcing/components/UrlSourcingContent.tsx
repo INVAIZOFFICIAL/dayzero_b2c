@@ -27,11 +27,11 @@ export const UrlSourcingContent = () => {
 
     const setUrls = (updater: import('react').SetStateAction<string[]>) => {
         const current = useSourcingStore.getState().urlSourcing.urls;
-        setUrlSourcing({ urls: typeof updater === 'function' ? (updater as any)(current) : updater });
+        setUrlSourcing({ urls: typeof updater === 'function' ? (updater as (prev: string[]) => string[])(current) : updater });
     };
     const setParsedUrls = (updater: import('react').SetStateAction<ParsedUrl[]>) => {
         const current = useSourcingStore.getState().urlSourcing.parsedUrls;
-        setUrlSourcing({ parsedUrls: typeof updater === 'function' ? (updater as any)(current) : updater });
+        setUrlSourcing({ parsedUrls: typeof updater === 'function' ? (updater as (prev: ParsedUrl[]) => ParsedUrl[])(current) : updater });
     };
     const setIsCollecting = (b: boolean) => setUrlSourcing({ isCollecting: b });
     const setCollectionStarted = (b: boolean) => setUrlSourcing({ collectionStarted: b });
@@ -58,6 +58,7 @@ export const UrlSourcingContent = () => {
         });
 
         setParsedUrls(newParsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [urls, collectionStarted]);
 
     const validCount = parsedUrls.filter(p => p.provider && !p.error).length;
@@ -166,7 +167,8 @@ export const UrlSourcingContent = () => {
             addJob({
                 id: `job-url-${Date.now()}`,
                 type: 'URL',
-                provider: urlsSnapshot.find(p => !p.error)?.provider || '기타' as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        provider: urlsSnapshot.find(p => !p.error)?.provider || '기타' as any,
                 categorySummary: `${successProcessed}건 수동 수집`,
                 status: 'completed',
                 totalCount: urlsSnapshot.filter(p => !p.error).length,

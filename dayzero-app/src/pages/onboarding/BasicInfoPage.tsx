@@ -71,7 +71,7 @@ export default function BasicInfoPage() {
 
     const handlePresetSelect = (val: ForwarderValue) => {
         const preset = PRESETS.find(p => p.id === val);
-        const updates: any = { forwarder: val };
+        const updates: Parameters<typeof updateState>[0] = { forwarder: val };
 
         if (preset && preset.id !== 'other') {
             updates.zipCode = preset.zipCode;

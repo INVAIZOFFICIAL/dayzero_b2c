@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const mockLogin = async (_email: string, _password: string) => {

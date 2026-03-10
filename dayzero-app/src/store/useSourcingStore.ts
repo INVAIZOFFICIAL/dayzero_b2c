@@ -57,8 +57,8 @@ export const useSourcingStore = create<SourcingState>((set) => ({
             provider: '올리브영',
             categorySummary: '뷰티 인기상품',
             status: 'running',
-            totalCount: 50,
-            currentCount: 23,
+            totalCount: 32,
+            currentCount: 4,
             createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
         },
         {
