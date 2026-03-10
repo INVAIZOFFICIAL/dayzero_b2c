@@ -32,6 +32,60 @@
 - UX 설계 기준에 정의된 원칙(인지 부하 해소, 단계별 정보 노출, 즉각 피드백)을 반드시 반영한다
 - 명세서에 없는 UI 요소를 임의로 추가하지 않는다. 불분명하면 먼저 질문한다
 
+---
+
+## 디자인 시스템 (UI 작업 필수 참조)
+
+**모든 UI 코드 작성 전에 반드시 읽는다:**
+```
+dayzero-app/src/design/tokens.ts
+```
+
+이 파일에 색상, 폰트 크기, 간격, 테두리 반경, 그림자, z-index가 모두 정의되어 있다.
+
+### 절대 규칙
+
+- **hex 색상 하드코딩 금지.** `colors.primary`, `colors.text.secondary` 등 토큰을 사용한다.
+- **숫자 폰트 크기 하드코딩 금지.** `font.size.base`, `font.size.sm` 등을 사용한다.
+- **임의의 px 간격 금지.** `spacing['4']`, `spacing['6']` 등을 사용한다.
+- **임의의 border-radius 금지.** `radius.md`, `radius.lg` 등을 사용한다.
+
+### 사용 예시
+
+```tsx
+import { colors, font, radius, spacing } from '@/design/tokens';
+// 또는 상대 경로: '../../design/tokens'
+
+// ✅ 올바른 방식
+style={{ color: colors.text.primary, fontSize: font.size.base, borderRadius: radius.lg }}
+
+// ❌ 금지
+style={{ color: '#191F28', fontSize: '15px', borderRadius: '12px' }}
+```
+
+### 토큰 요약
+
+| 토큰 | 값 | 용도 |
+|---|---|---|
+| `colors.primary` | #3182F6 | CTA 버튼, 활성 상태, 링크 |
+| `colors.danger` | #F04452 | 에러, 삭제 |
+| `colors.success` | #00C853 | 완료, 활성 토글 |
+| `colors.text.primary` | #191F28 | 제목, 강조 |
+| `colors.text.secondary` | #4E5968 | 본문 |
+| `colors.text.tertiary` | #6B7684 | 부가 설명 |
+| `colors.text.muted` | #8B95A1 | 비활성 |
+| `colors.bg.page` | #F9FAFB | 페이지 배경 |
+| `colors.bg.surface` | #FFFFFF | 카드·패널 |
+| `colors.bg.subtle` | #F2F4F6 | 태그·뱃지 배경 |
+| `colors.border.default` | #E5E8EB | 카드·구분선 |
+| `font.size.sm` | 13px | 보조 텍스트 |
+| `font.size.base` | 15px | 본문 기본 |
+| `font.size.lg` | 18px | 섹션 제목 |
+| `font.size['2xl']` | 28px | 페이지 제목 |
+| `radius.md` | 8px | 버튼·인풋 |
+| `radius.lg` | 12px | 카드 |
+| `radius.xl` | 16px | 모달·패널 |
+
 ## 역할
 
 - 실력 있는 시니어 엔지니어처럼 행동한다.
@@ -129,6 +183,7 @@
 - UI 변경은 디자인 확정 후 구현한다 (추측으로 만들지 않는다)
 - 스타일은 레이아웃 먼저 → 세부 스타일 순서로
 - 복잡한 UI는 `/frontend-design` 플러그인 사용
+- **모든 색상·폰트·간격·반경은 `src/design/tokens.ts`에서 가져온다. 하드코딩 금지.**
 
 ---
 

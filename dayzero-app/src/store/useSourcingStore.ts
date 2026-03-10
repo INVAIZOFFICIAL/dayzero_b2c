@@ -21,6 +21,7 @@ interface SourcingState {
     unreadCount: number;
     particleOrigin: { x: number; y: number } | null;
     flyingBalls: Array<{ id: number; originX: number; originY: number }>;
+    selectedAutoFilter: string;
 
     urlSourcing: {
         urls: string[];
@@ -31,10 +32,12 @@ interface SourcingState {
     };
 
     setUrlSourcing: (updates: Partial<SourcingState['urlSourcing']>) => void;
+    setSelectedAutoFilter: (filter: string) => void;
 
     addJob: (job: SourcingJob) => void;
     updateJob: (id: string, updates: Partial<SourcingJob>) => void;
     addSchedule: (schedule: AutoSchedule) => void;
+    updateSchedule: (id: string, updates: Partial<AutoSchedule>) => void;
     toggleSchedule: (id: string) => void;
     setUnprocessedCount: (count: number) => void;
     addProduct: (product: SourcedProduct) => void;
@@ -89,20 +92,22 @@ export const useSourcingStore = create<SourcingState>((set) => ({
         {
             id: 'sched-1',
             provider: '올리브영',
-            categoryPath: '뷰티 > 스킨케어',
+            categoryPath: '뷰티 - 스킨케어',
             criteria: '인기상품',
             targetCount: 50,
-            timeString: '06:00',
+            timeString: '07:00',
             isActive: true,
+            lastRunAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
         },
         {
             id: 'sched-2',
             provider: '쿠팡',
-            categoryPath: '생활용품 > 세제/세정',
-            criteria: '신상품',
+            categoryPath: '생활용품 - 세제/세정',
+            criteria: '전체상품',
             targetCount: 30,
             timeString: '07:00',
             isActive: true,
+            lastRunAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
         }
     ],
     unprocessedProductCount: 0,
@@ -111,6 +116,7 @@ export const useSourcingStore = create<SourcingState>((set) => ({
     unreadCount: 0,
     particleOrigin: null,
     flyingBalls: [],
+    selectedAutoFilter: '전체',
     urlSourcing: {
         urls: [],
         parsedUrls: [],
@@ -123,6 +129,8 @@ export const useSourcingStore = create<SourcingState>((set) => ({
         urlSourcing: { ...state.urlSourcing, ...updates }
     })),
 
+    setSelectedAutoFilter: (filter) => set({ selectedAutoFilter: filter }),
+
     addJob: (job) => set((state) => ({ jobs: [job, ...state.jobs] })),
 
     updateJob: (id, updates) => set((state) => ({
@@ -130,6 +138,10 @@ export const useSourcingStore = create<SourcingState>((set) => ({
     })),
 
     addSchedule: (schedule) => set((state) => ({ schedules: [...state.schedules, schedule] })),
+
+    updateSchedule: (id, updates) => set((state) => ({
+        schedules: state.schedules.map((s) => s.id === id ? { ...s, ...updates } : s)
+    })),
 
     toggleSchedule: (id) => set((state) => ({
         schedules: state.schedules.map((s) => s.id === id ? { ...s, isActive: !s.isActive } : s)

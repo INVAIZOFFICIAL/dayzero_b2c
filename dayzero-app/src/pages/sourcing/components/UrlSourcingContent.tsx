@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { SOURCING_PROVIDERS, MOCK_URL_TO_PROVIDER } from '../../../types/sourcing';
 import type { SourcingProvider, SourcedProduct } from '../../../types/sourcing';
 import { useSourcingStore } from '../../../store/useSourcingStore';
+import { useToastStore } from '../../../store/useToastStore';
 import { Link2, AlertCircle, Loader2, CheckCircle2, XCircle, ArrowRight, X } from 'lucide-react';
 import { useOnboarding } from '../../../components/onboarding/OnboardingContext';
+import { colors } from '../../../design/tokens';
 
 interface ParsedUrl {
     id: string;
@@ -18,6 +20,7 @@ interface ParsedUrl {
 export const UrlSourcingContent = () => {
     const navigate = useNavigate();
     const { addJob, addProduct, addNotification, updateNotification, urlSourcing, setUrlSourcing } = useSourcingStore();
+    const { addToast } = useToastStore();
     const { state: onboardingState } = useOnboarding();
 
     const { urls, parsedUrls, isCollecting, collectionStarted } = urlSourcing;
@@ -38,7 +41,6 @@ export const UrlSourcingContent = () => {
     const startButtonRef = useRef<HTMLButtonElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Parse URLs on input change
     useEffect(() => {
         if (collectionStarted) return;
 
@@ -128,7 +130,7 @@ export const UrlSourcingContent = () => {
                     jobId: 'manual-url-job',
                     provider: current.provider,
                     title: realTitle,
-                    thumbnailUrl: '', // 더미 데이터이므로 UI에서 배경색으로 대체
+                    thumbnailUrl: '',
                     originalPriceKrw: orgPrice,
                     optionCount: Math.floor(Math.random() * 5),
                     sourceUrl: current.url,
@@ -172,6 +174,20 @@ export const UrlSourcingContent = () => {
                 createdAt: new Date().toISOString(),
                 completedAt: new Date().toISOString(),
             });
+
+            const failedCount = urlsSnapshot.filter(p => !p.error).length - successProcessed;
+
+            if (failedCount > 0) {
+                addToast(
+                    '요청하신 상품의 수집이 완료되었어요!',
+                    `URL 수집 ${urlsSnapshot.filter(p => !p.error).length}건 중 ${successProcessed}건 성공, ${failedCount}건 실패했어요.`
+                );
+            } else {
+                addToast(
+                    '요청하신 상품의 수집이 완료되었어요!',
+                    `URL 수집 ${successProcessed}건 모두 성공적으로 수집했어요.`
+                );
+            }
         }
     };
 
@@ -202,16 +218,17 @@ export const UrlSourcingContent = () => {
     };
 
     const handleEditClick = () => {
-        navigate('/edit'); // Placeholder for navigation to editing page
+        navigate('/edit');
     };
 
     return (
         <div style={{ animation: 'fadeInUp 0.4s ease' }}>
-            <div style={{ background: '#F8F9FA', borderRadius: '12px', padding: '16px', marginBottom: '32px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <Link2 size={20} color="#3182F6" style={{ marginTop: '2px' }} />
+            {/* Info Callout */}
+            <div style={{ background: colors.bg.faint, borderRadius: '12px', padding: '16px', marginBottom: '32px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <Link2 size={16} color={colors.primary} style={{ marginTop: '3px', flexShrink: 0 }} />
                 <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#191F28', marginBottom: '4px' }}>URL 수집이란?</h3>
-                    <p style={{ fontSize: '14px', color: '#4E5968', lineHeight: '1.5' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '4px' }}>URL 수집이란?</h3>
+                    <p style={{ fontSize: '14px', color: colors.text.secondary, lineHeight: '1.5' }}>
                         원하는 특정 상품의 상세 페이지 주소(URL)를 직접 입력하여 리스트 형태로 수집하는 기능이에요. 주소를 입력하고 엔터(Enter)나 스페이스바를 누르거나, 여러 개의 주소를 한 번에 붙여넣기 하여 최대 20개까지 추가할 수 있어요.
                     </p>
                 </div>
@@ -219,9 +236,9 @@ export const UrlSourcingContent = () => {
 
             {/* Input Area */}
             {!collectionStarted && (
-                <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E8EB', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ background: colors.bg.surface, borderRadius: '16px', border: `1px solid ${colors.border.default}`, padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#4E5968' }}>수집할 URL 목록 ({urls.length}/20)</span>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary }}>수집할 URL 목록 ({urls.length}/20)</span>
                     </div>
                     <div
                         onClick={() => inputRef.current?.focus()}
@@ -231,16 +248,16 @@ export const UrlSourcingContent = () => {
                             gap: '8px',
                             padding: '16px',
                             borderRadius: '12px',
-                            border: '1px solid #D1D6DB',
-                            background: '#F9FAFB',
+                            border: `1px solid ${colors.border.light}`,
+                            background: colors.bg.page,
                             minHeight: '160px',
                             alignItems: 'flex-start',
                             alignContent: 'flex-start',
                             cursor: 'text',
                             transition: 'border-color 0.2s'
                         }}
-                        onFocus={(e) => (e.currentTarget.style.borderColor = '#3182F6')}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = '#D1D6DB')}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = colors.primary)}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = colors.border.light)}
                     >
                         {parsedUrls.map(p => (
                             <div key={p.id} style={{
@@ -249,21 +266,21 @@ export const UrlSourcingContent = () => {
                                 gap: '6px',
                                 padding: '6px 10px',
                                 borderRadius: '20px',
-                                background: '#FFFFFF',
-                                border: `1px solid ${p.provider ? '#E5E8EB' : '#FDE2E4'}`,
+                                background: colors.bg.surface,
+                                border: `1px solid ${p.provider ? colors.border.default : colors.dangerLight}`,
                                 boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                             }}>
                                 {p.provider ? (
                                     <>
                                         <img src={SOURCING_PROVIDERS.find(s => s.name === p.provider)?.logo} alt={p.provider} style={{ width: 16, height: 16, borderRadius: 4 }} />
-                                        <span style={{ color: '#191F28', fontSize: '13px', fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.url}</span>
-                                        <CheckCircle2 size={14} color="#00C853" />
+                                        <span style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.url}</span>
+                                        <CheckCircle2 size={14} color={colors.success} />
                                     </>
                                 ) : (
                                     <>
-                                        <AlertCircle size={14} color="#F04452" />
-                                        <span style={{ color: '#8B95A1', fontSize: '13px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{p.url}</span>
-                                        <span style={{ color: '#F04452', fontSize: '12px', fontWeight: 600 }}>{p.error}</span>
+                                        <AlertCircle size={14} color={colors.danger} />
+                                        <span style={{ color: colors.text.muted, fontSize: '13px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{p.url}</span>
+                                        <span style={{ color: colors.danger, fontSize: '12px', fontWeight: 600 }}>{p.error}</span>
                                     </>
                                 )}
                                 <button
@@ -271,8 +288,8 @@ export const UrlSourcingContent = () => {
                                         e.stopPropagation();
                                         setUrls(prev => prev.filter(u => u !== p.url));
                                     }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', marginLeft: '2px', display: 'flex', color: '#8B95A1', borderRadius: '50%' }}
-                                    onMouseOver={(e) => e.currentTarget.style.background = '#F2F4F6'}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', marginLeft: '2px', display: 'flex', color: colors.text.muted, borderRadius: '50%' }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = colors.bg.subtle}
                                     onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                                 >
                                     <X size={14} />
@@ -316,12 +333,12 @@ export const UrlSourcingContent = () => {
                                 }
                                 setPendingInput('');
                                 if (inputRef.current?.parentElement) {
-                                    inputRef.current.parentElement.style.borderColor = '#D1D6DB';
+                                    inputRef.current.parentElement.style.borderColor = colors.border.light;
                                 }
                             }}
                             onFocus={() => {
                                 if (inputRef.current?.parentElement) {
-                                    inputRef.current.parentElement.style.borderColor = '#3182F6';
+                                    inputRef.current.parentElement.style.borderColor = colors.primary;
                                 }
                             }}
                             onPaste={e => {
@@ -345,7 +362,7 @@ export const UrlSourcingContent = () => {
                                     }
                                 }
                             }}
-                            placeholder={urls.length === 0 ? "상품 URL을 입력하고 엔터(줄바꿈)를 누르세요" : ""}
+                            placeholder={urls.length === 0 ? "상품 URL을 입력하고 엔터 및 스페이스 바를 누르세요" : ""}
                             style={{
                                 flex: 1,
                                 minWidth: '200px',
@@ -353,7 +370,7 @@ export const UrlSourcingContent = () => {
                                 border: 'none',
                                 outline: 'none',
                                 fontSize: '14px',
-                                color: '#191F28',
+                                color: colors.text.primary,
                                 fontFamily: 'Pretendard, -apple-system, sans-serif',
                                 padding: '6px 4px'
                             }}
@@ -361,9 +378,9 @@ export const UrlSourcingContent = () => {
                         />
                     </div>
 
-                    {/* Supported Providers Grid: Always Open */}
-                    <div style={{ marginTop: '24px', borderTop: '1px solid #E5E8EB', paddingTop: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: '#8B95A1', marginBottom: '12px' }}>
+                    {/* Supported Providers Grid */}
+                    <div style={{ marginTop: '24px', borderTop: `1px solid ${colors.border.default}`, paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: colors.text.muted, marginBottom: '12px' }}>
                             지원 소싱처
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
@@ -379,24 +396,24 @@ export const UrlSourcingContent = () => {
                                         alignItems: 'center',
                                         gap: '8px',
                                         padding: '12px',
-                                        background: '#F9FAFB',
+                                        background: colors.bg.page,
                                         borderRadius: '8px',
-                                        border: '1px solid #E5E8EB',
+                                        border: `1px solid ${colors.border.default}`,
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
                                         color: 'inherit'
                                     }}
                                     onMouseOver={e => {
-                                        e.currentTarget.style.background = '#F2F4F6';
-                                        e.currentTarget.style.borderColor = '#D1D6DB';
+                                        e.currentTarget.style.background = colors.bg.subtle;
+                                        e.currentTarget.style.borderColor = colors.border.light;
                                     }}
                                     onMouseOut={e => {
-                                        e.currentTarget.style.background = '#F9FAFB';
-                                        e.currentTarget.style.borderColor = '#E5E8EB';
+                                        e.currentTarget.style.background = colors.bg.page;
+                                        e.currentTarget.style.borderColor = colors.border.default;
                                     }}
                                 >
                                     <img src={p.logo} alt={p.name} style={{ width: '24px', height: '24px', borderRadius: '4px' }} />
-                                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#4E5968' }}>{p.name}</span>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary }}>{p.name}</span>
                                 </a>
                             ))}
                         </div>
@@ -419,24 +436,24 @@ export const UrlSourcingContent = () => {
 
             {/* Progress Area */}
             {collectionStarted && (
-                <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E8EB', padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.04)', animation: 'slideUp 0.4s ease' }}>
+                <div style={{ background: colors.bg.surface, borderRadius: '16px', border: `1px solid ${colors.border.default}`, padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.04)', animation: 'slideUp 0.4s ease' }}>
 
                     {/* Overall Progress */}
                     <div style={{ marginBottom: '32px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#191F28', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {isCollecting ? <Loader2 size={20} className="spin" color="#3182F6" /> : <CheckCircle2 size={20} color="#00C853" />}
+                            <h2 style={{ fontSize: '18px', fontWeight: 700, color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {isCollecting ? <Loader2 size={20} className="spin" color={colors.primary} /> : <CheckCircle2 size={20} color={colors.success} />}
                                 {isCollecting ? '상품 정보를 수집하고 있어요' : '수집이 완료됐어요'}
                             </h2>
-                            <span style={{ fontSize: '15px', fontWeight: 600, color: '#3182F6' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 600, color: colors.primary }}>
                                 {completedCount} / {parsedUrls.length}건 완료
                             </span>
                         </div>
-                        <div style={{ width: '100%', height: '8px', background: '#F2F4F6', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: '100%', height: '8px', background: colors.bg.subtle, borderRadius: '4px', overflow: 'hidden' }}>
                             <div style={{
                                 width: `${(completedCount / parsedUrls.length) * 100}%`,
                                 height: '100%',
-                                background: isAllCompleted && successCount === parsedUrls.length ? '#00C853' : '#3182F6',
+                                background: isAllCompleted && successCount === parsedUrls.length ? colors.success : colors.primary,
                                 borderRadius: '4px',
                                 transition: 'width 0.4s ease, background 0.4s ease'
                             }} />
@@ -455,32 +472,31 @@ export const UrlSourcingContent = () => {
                                     gap: '16px',
                                     padding: '16px',
                                     borderRadius: '12px',
-                                    background: item.status === 'failed' ? '#FEF0F1' : '#F9FAFB',
-                                    border: `1px solid ${item.status === 'failed' ? '#FDE2E4' : '#E5E8EB'}`,
+                                    background: item.status === 'failed' ? colors.dangerBg : colors.bg.page,
+                                    border: `1px solid ${item.status === 'failed' ? colors.dangerLight : colors.border.default}`,
                                     transition: 'all 0.3s ease'
                                 }}
                             >
                                 {/* Status Icon */}
                                 <div style={{ marginTop: '2px', display: 'flex', alignItems: 'center' }}>
-                                    {item.status === 'idle' && <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #D1D6DB' }} />}
-                                    {item.status === 'running' && <Loader2 size={20} color="#3182F6" className="spin" />}
+                                    {item.status === 'idle' && <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${colors.border.light}` }} />}
+                                    {item.status === 'running' && <Loader2 size={20} color={colors.primary} className="spin" />}
                                     {item.status === 'completed' && (
-                                        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid #00C853', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00C853" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <div style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${colors.success}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.success} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="20 6 9 17 4 12"></polyline>
                                             </svg>
                                         </div>
                                     )}
-                                    {item.status === 'failed' && <XCircle size={20} color="#F04452" />}
+                                    {item.status === 'failed' && <XCircle size={20} color={colors.danger} />}
                                 </div>
 
                                 {/* Content */}
                                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
 
-                                    {/* Product Title or Provider Name (if completed) vs URL (if not completed) */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         {item.provider && <img src={SOURCING_PROVIDERS.find(p => p.name === item.provider)?.logo} alt={item.provider} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />}
-                                        <div style={{ fontSize: '15px', fontWeight: 600, color: '#191F28', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div style={{ fontSize: '15px', fontWeight: 600, color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {item.product ?
                                                 <a href={item.url} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}>
                                                     {item.product.title}
@@ -489,7 +505,6 @@ export const UrlSourcingContent = () => {
                                         </div>
                                     </div>
 
-                                    {/* URL or Price details */}
                                     {item.product ? (() => {
                                         const margin = onboardingState.marginType === '%'
                                             ? Math.round(item.product.originalPriceKrw * (onboardingState.marginValue / 100))
@@ -498,34 +513,34 @@ export const UrlSourcingContent = () => {
                                         const finalJpy = Math.round(krw / 9.2) + onboardingState.intlShipping;
 
                                         return (
-                                            <div style={{ fontSize: '13px', color: '#4E5968', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ color: '#8B95A1' }}>원가</span>
+                                            <div style={{ fontSize: '13px', color: colors.text.secondary, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ color: colors.text.muted }}>원가</span>
                                                 <span style={{ fontWeight: 600 }}>₩{item.product.originalPriceKrw.toLocaleString()}</span>
-                                                <span style={{ color: '#E5E8EB', margin: '0 4px' }}>|</span>
-                                                <span style={{ color: '#8B95A1' }}>예상 판매가</span>
-                                                <span style={{ fontWeight: 600, color: '#3182F6' }}>¥{finalJpy.toLocaleString()}</span>
-                                                <span style={{ color: '#E5E8EB', margin: '0 4px' }}>|</span>
-                                                <span style={{ color: '#8B95A1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>{item.url}</span>
+                                                <span style={{ color: colors.border.default, margin: '0 4px' }}>|</span>
+                                                <span style={{ color: colors.text.muted }}>예상 판매가</span>
+                                                <span style={{ fontWeight: 600, color: colors.primary }}>¥{finalJpy.toLocaleString()}</span>
+                                                <span style={{ color: colors.border.default, margin: '0 4px' }}>|</span>
+                                                <span style={{ color: colors.text.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>{item.url}</span>
                                             </div>
                                         );
                                     })() : (
                                         <>
                                             {item.error && (
-                                                <div style={{ fontSize: '13px', color: '#F04452', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ fontSize: '13px', color: colors.danger, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     {item.error}
-                                                    <button onClick={() => handleRetry(item.id)} style={{ background: 'none', border: 'none', color: '#F04452', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>재시도</button>
+                                                    <button onClick={() => handleRetry(item.id)} style={{ background: 'none', border: 'none', color: colors.danger, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>재시도</button>
                                                 </div>
                                             )}
                                         </>
                                     )}
 
-                                    {item.status === 'idle' && !item.error && <div style={{ fontSize: '13px', color: '#8B95A1', marginTop: '4px' }}>대기 중...</div>}
-                                    {item.status === 'running' && <div style={{ fontSize: '13px', color: '#3182F6', marginTop: '4px' }}>정보를 가져오고 있어요...</div>}
+                                    {item.status === 'idle' && !item.error && <div style={{ fontSize: '13px', color: colors.text.muted, marginTop: '4px' }}>대기 중...</div>}
+                                    {item.status === 'running' && <div style={{ fontSize: '13px', color: colors.primary, marginTop: '4px' }}>정보를 가져오고 있어요...</div>}
                                 </div>
 
                                 {/* Thumbnail Preview */}
                                 {item.product && (
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', border: '1px solid #E5E8EB', backgroundColor: '#F2F4F6', flexShrink: 0 }} />
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, backgroundColor: colors.bg.subtle, flexShrink: 0 }} />
                                 )}
                             </div>
                         ))}
@@ -539,7 +554,7 @@ export const UrlSourcingContent = () => {
                                     수집된 상품 확인하기 <ArrowRight size={18} />
                                 </button>
                             )}
-                            <button className="btn-google" onClick={() => { setCollectionStarted(false); setUrls([]); }} style={{ width: '100%', background: '#F2F4F6', border: 'none', padding: '16px', fontSize: '15px' }}>
+                            <button className="btn-google" onClick={() => { setCollectionStarted(false); setUrls([]); }} style={{ width: '100%', background: colors.bg.subtle, border: 'none', padding: '16px', fontSize: '15px' }}>
                                 추가 수집하기
                             </button>
                         </div>

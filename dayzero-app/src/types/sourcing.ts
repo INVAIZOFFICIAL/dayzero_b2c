@@ -19,10 +19,11 @@ export interface AutoSchedule {
     id: string;
     provider: SourcingProvider;
     categoryPath: string; // e.g. "대분류 > 중분류 > 소분류"
-    criteria: '인기상품' | '신상품';
+    criteria: '인기상품' | '전체상품';
     targetCount: number;
     timeString: string; // e.g. "06:00"
     isActive: boolean;
+    lastRunAt?: string;
 }
 
 export interface SourcedProduct {

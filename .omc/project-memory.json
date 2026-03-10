@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773118743645,
+  "projectRoot": "/Users/invaiz/Documents/develop/dayzero_B2C",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "Resources": {
+      "path": "Resources",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1773118743622,
+      "keyFiles": [
+        "DayZero Logo.png",
+        "QXpress.webp",
+        "데이제로 로고.png"
+      ]
+    },
+    "dayzero-app": {
+      "path": "dayzero-app",
+      "purpose": null,
+      "fileCount": 10,
+      "lastAccessed": 1773118743623,
+      "keyFiles": [
+        "README.md",
+        "eslint.config.js",
+        "index.html",
+        "package-lock.json",
+        "package.json"
+      ]
+    },
+    "design": {
+      "path": "design",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773118743623,
+      "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 7,
+      "lastAccessed": 1773118743623,
+      "keyFiles": [
+        "01_솔루션 제안서(RFP).md",
+        "02_UX 설계 기준.md",
+        "03_IA 구조 설계.md",
+        "04_화면별 기능 명세서.md",
+        "05-2. WBS.csv"
+      ]
+    },
+    "rulebook": {
+      "path": "rulebook",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773118743624,
+      "keyFiles": [
+        "CLAUDE.md"
+      ]
+    },
+    "skills": {
+      "path": "skills",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1773118743625,
+      "keyFiles": [
+        "feature-dev.md",
+        "frontend-design.md",
+        "karpathy-guidelines.md",
+        "ralph-loop.md"
+      ]
+    },
+    "dayzero-app/dist": {
+      "path": "dayzero-app/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 5,
+      "lastAccessed": 1773118743626,
+      "keyFiles": [
+        "DayZero Logo.png",
+        "Qoo10.png",
+        "dayzero-logo.png"
+      ]
+    },
+    "dayzero-app/node_modules": {
+      "path": "dayzero-app/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1773118743626,
+      "keyFiles": []
+    },
+    "dayzero-app/public": {
+      "path": "dayzero-app/public",
+      "purpose": "Public files",
+      "fileCount": 4,
+      "lastAccessed": 1773118743627,
+      "keyFiles": [
+        "DayZero Logo.png",
+        "Qoo10.png",
+        "dayzero-logo.png"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "AGENTS.md",
+      "accessCount": 3,
+      "lastAccessed": 1773122857833,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/design/tokens.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773122821648,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

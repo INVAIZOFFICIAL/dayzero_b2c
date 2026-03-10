@@ -6,7 +6,6 @@ import BasicMarginPage from './pages/onboarding/BasicMarginPage';
 import SourcingPage from './pages/SourcingPage';
 import UrlSourcingPage from './pages/sourcing/UrlSourcingPage';
 import AutoSourcingPage from './pages/sourcing/AutoSourcingPage';
-import SourcingResultPage from './pages/sourcing/SourcingResultPage';
 import { OnboardingProvider } from './components/onboarding/OnboardingContext';
 
 export default function App() {
@@ -23,7 +22,6 @@ export default function App() {
           <Route path="/sourcing" element={<SourcingPage />} />
           <Route path="/sourcing/url" element={<UrlSourcingPage />} />
           <Route path="/sourcing/auto" element={<AutoSourcingPage />} />
-          <Route path="/sourcing/result" element={<SourcingResultPage />} />
 
           {/* Default redirect to splash */}
           <Route path="*" element={<Navigate to="/" replace />} />

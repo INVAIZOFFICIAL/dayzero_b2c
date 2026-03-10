@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, CheckCircle2, Loader2, X, ArrowRight } from 'lucide-react';
+import { Bell, CheckCircle2, Loader2, X } from 'lucide-react';
 import { useSourcingStore } from '../../store/useSourcingStore';
 
 interface Particle {
@@ -13,7 +13,6 @@ interface Particle {
 export const NotificationPanel: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeParticles, setActiveParticles] = useState<Particle[]>([]);
-    const [showToast, setShowToast] = useState(false);
     const bellRef = useRef<HTMLButtonElement>(null);
 
     const { notifications, unreadCount, particleOrigin, markAllRead, triggerParticle } = useSourcingStore();
@@ -49,9 +48,10 @@ export const NotificationPanel: React.FC = () => {
         if (next) markAllRead();
     };
 
-    const handleNotificationClick = () => {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 2000);
+    const handleNotificationClick = (status: string) => {
+        if (status === 'completed') {
+            setIsOpen(false);
+        }
     };
 
     return (
@@ -172,15 +172,15 @@ export const NotificationPanel: React.FC = () => {
                                 notifications.map((n) => (
                                     <div
                                         key={n.id}
-                                        onClick={handleNotificationClick}
+                                        onClick={() => handleNotificationClick(n.status)}
                                         style={{
                                             padding: '16px 20px',
                                             borderBottom: '1px solid #F9FAFB',
-                                            cursor: 'pointer',
+                                            cursor: n.status === 'completed' ? 'pointer' : 'default',
                                             transition: 'background 0.15s',
                                         }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                        onMouseEnter={(e) => n.status === 'completed' && (e.currentTarget.style.background = '#F9FAFB')}
+                                        onMouseLeave={(e) => n.status === 'completed' && (e.currentTarget.style.background = 'transparent')}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                                             <div style={{
@@ -204,7 +204,11 @@ export const NotificationPanel: React.FC = () => {
                                                     {n.title}
                                                 </div>
 
-                                                {n.status === 'running' ? (
+                                                {n.type === 'auto' ? (
+                                                    <div style={{ fontSize: '13px', color: '#6B7684' }}>
+                                                        내일 오전 07:00부터 자동 실행돼요.
+                                                    </div>
+                                                ) : n.status === 'running' ? (
                                                     <>
                                                         <div style={{ fontSize: '12px', color: '#6B7684', marginBottom: '8px' }}>
                                                             수집 중... {n.currentCount}/{n.totalCount}건
@@ -221,12 +225,9 @@ export const NotificationPanel: React.FC = () => {
                                                     </>
                                                 ) : (
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <span style={{ fontSize: '12px', color: '#3ED4A4', fontWeight: 600 }}>
-                                                            {n.currentCount}건 수집 완료
+                                                        <span style={{ fontSize: '13px', color: '#3ED4A4', fontWeight: 600 }}>
+                                                            {n.totalCount}건 중 {n.currentCount}건 수집 완료했어요
                                                         </span>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#3182F6', fontWeight: 600 }}>
-                                                            편집하러 가기 <ArrowRight size={12} />
-                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -239,25 +240,6 @@ export const NotificationPanel: React.FC = () => {
                 )}
             </div>
 
-            {/* 준비 중이에요 Toast */}
-            {showToast && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '100px',
-                    right: '24px',
-                    background: 'rgba(25, 31, 40, 0.9)',
-                    color: '#FFFFFF',
-                    padding: '12px 20px',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    zIndex: 9999,
-                    animation: 'fadeInUp 0.25s ease',
-                    fontFamily: 'Pretendard, sans-serif',
-                }}>
-                    준비 중이에요
-                </div>
-            )}
         </>
     );
 };

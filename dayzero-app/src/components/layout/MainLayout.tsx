@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { NotificationPanel } from '../common/NotificationPanel';
+import { ToastContainer } from '../common/ToastContainer';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -16,6 +17,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         }}>
             <Sidebar />
             <NotificationPanel />
+            <ToastContainer />
 
             <main style={{
                 flex: 1,

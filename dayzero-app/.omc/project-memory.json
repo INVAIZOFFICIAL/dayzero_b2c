@@ -155,6 +155,18 @@
       "type": "file"
     },
     {
+      "path": "src/pages/SourcingPage.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1773127538012,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/sourcing/components/UrlSourcingContent.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1773127770309,
+      "type": "file"
+    },
+    {
       "path": "src/pages/onboarding/BasicInfoPage.tsx",
       "accessCount": 4,
       "lastAccessed": 1773098411872,
@@ -173,6 +185,12 @@
       "type": "file"
     },
     {
+      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773127657157,
+      "type": "file"
+    },
+    {
       "path": "src/pages/sourcing/UrlSourcingPage.tsx",
       "accessCount": 3,
       "lastAccessed": 1773100909126,
@@ -182,6 +200,12 @@
       "path": "src/components/layout/Sidebar.tsx",
       "accessCount": 3,
       "lastAccessed": 1773106182910,
+      "type": "file"
+    },
+    {
+      "path": "src/design/tokens.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773127491024,
       "type": "file"
     },
     {
@@ -212,18 +236,6 @@
       "path": "src/components/layout/MainLayout.tsx",
       "accessCount": 2,
       "lastAccessed": 1773100812062,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773100977215,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/SourcingPage.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1773064604409,
       "type": "file"
     },
     {
