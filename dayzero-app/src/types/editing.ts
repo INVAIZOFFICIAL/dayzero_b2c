@@ -43,9 +43,11 @@ export interface ProductDetail {
 
     // 상태
     translationStatus: 'pending' | 'processing' | 'completed' | 'failed';
-    editStatus: 'pending' | 'completed';
+    editStatus: 'pending' | 'processing' | 'completed' | 'failed';
     lastSavedAt: string | null;
     createdAt: string; // 수집 등록일 (ISO string)
+    isRead: boolean;
+    jobId?: string; // 소싱 작업 고유 ID (알림 연동용)
 }
 
 export interface TranslationJob {
@@ -55,6 +57,25 @@ export interface TranslationJob {
     status: 'queued' | 'processing' | 'completed' | 'failed';
     errorMessage?: string;
     targets: ('title' | 'description' | 'options')[];
+    isRead?: boolean;
 }
 
 export type EditTabFilter = 'all' | 'needs_translation' | 'translated';
+
+export interface TranslationBatch {
+    id: string;
+    totalCount: number;
+    currentCount: number;
+    status: 'processing' | 'completed' | 'failed';
+    createdAt: string;
+    isRead?: boolean;
+}
+
+export interface RegistrationBatch {
+    id: string;
+    totalCount: number;
+    currentCount: number;
+    status: 'processing' | 'completed' | 'failed';
+    createdAt: string;
+    isRead?: boolean;
+}

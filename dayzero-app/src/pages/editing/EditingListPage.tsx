@@ -1,12 +1,16 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import { useEditingStore } from '../../store/useEditingStore';
+import { useSourcingStore } from '../../store/useSourcingStore';
+import { useOnboarding } from '../../components/onboarding/OnboardingContext';
 import { SOURCING_PROVIDERS } from '../../types/sourcing';
 import type { EditTabFilter } from '../../types/editing';
 import { ProductListItem } from './components/ProductListItem';
 import { BulkActionBar } from './components/BulkActionBar';
+import { TranslationModal } from './components/TranslationModal';
+import { Checkbox } from '../../components/common/Checkbox';
 import { colors, font, radius, spacing } from '../../design/tokens';
 
 const TAB_LABELS: { key: EditTabFilter; label: string }[] = [
@@ -15,25 +19,6 @@ const TAB_LABELS: { key: EditTabFilter; label: string }[] = [
     { key: 'translated', label: '번역 완료' },
 ];
 
-const Checkbox: React.FC<{ checked: boolean; onClick: () => void }> = ({ checked, onClick }) => (
-    <div
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
-        style={{
-            width: '20px', height: '20px', flexShrink: 0,
-            borderRadius: radius.xs,
-            border: `2px solid ${checked ? colors.primary : colors.border.light}`,
-            background: checked ? colors.primary : colors.bg.surface,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'all 0.15s',
-        }}
-    >
-        {checked && (
-            <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
-                <path d="M1 3.5L4 6.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        )}
-    </div>
-);
 
 const SortHeader: React.FC<{
     label: string;
@@ -76,12 +61,71 @@ export default function EditingListPage() {
         if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
         else { setSortKey(key); setSortDir(key === 'createdAt' ? 'desc' : 'asc'); }
     };
+    const location = useLocation();
     const {
         products, selectedProductIds, activeTab, providerFilter, searchKeyword,
         setActiveTab, setProviderFilter, setSearchKeyword,
         toggleSelectProduct, selectAll, clearSelection,
-        openTranslationModal, deleteProducts,
+        openTranslationModal, closeTranslationModal, isTranslationModalOpen, deleteProducts, updateProduct,
+        startTranslationJobs, startRegistrationBatch, markProductsRead, selectByJobId
     } = useEditingStore();
+
+    useEffect(() => {
+        return () => {
+            markProductsRead();
+        };
+    }, [markProductsRead]);
+
+    const { state: onboardingState } = useOnboarding();
+    const { clearUnprocessedCount } = useSourcingStore();
+
+    useEffect(() => {
+        clearUnprocessedCount();
+    }, [clearUnprocessedCount]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const focusJobId = params.get('focusJobId');
+
+        if (focusJobId && products.length > 0) {
+            const hasFocusItems = products.some(p => p.jobId === focusJobId);
+
+            if (hasFocusItems) {
+                setActiveTab('all');
+                setProviderFilter('전체');
+                selectByJobId(focusJobId);
+                setTimeout(() => {
+                    const element = document.querySelector(`[data-job-id="${focusJobId}"]`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [selectByJobId, setActiveTab, setProviderFilter, products.length, location.search, location.pathname, navigate]);
+
+    useEffect(() => {
+        // 일괄 업데이트를 위해 변경사항 수집
+        const updates: { id: string, updates: Partial<any> }[] = [];
+
+        products.forEach(p => {
+            const costKrw = p.originalPriceKrw + onboardingState.domesticShipping + onboardingState.prepCost + onboardingState.intlShipping;
+            const margin = onboardingState.marginType === '%' ? costKrw * (onboardingState.marginValue / 100) : onboardingState.marginValue;
+            const salePriceKrw = costKrw + margin;
+            const expectedJpy = Math.round(salePriceKrw * 0.11);
+
+            if (Math.abs(p.salePriceJpy - expectedJpy) > 10) {
+                updates.push({ id: p.id, updates: { salePriceJpy: expectedJpy } });
+            }
+        });
+
+        // 한 번에 하나씩 업데이트 (루프 방지를 위해 순차적 처리 또는 추후 스토어에 batchUpdate 추가 필요)
+        if (updates.length > 0) {
+            updates.forEach(u => updateProduct(u.id, u.updates));
+        }
+    }, [products.length, onboardingState, updateProduct]);
 
     // 탭별 건수 (providerFilter 무관하게 계산)
     const counts = useMemo(() => ({
@@ -120,6 +164,19 @@ export default function EditingListPage() {
 
     const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedProductIds.includes(p.id));
 
+    const selectedTranslateCount = useMemo(() =>
+        products.filter((p) => selectedProductIds.includes(p.id) && (p.translationStatus === 'pending' || p.translationStatus === 'failed')).length,
+        [products, selectedProductIds]
+    );
+    const selectedRegisterCount = useMemo(() =>
+        products.filter((p) => selectedProductIds.includes(p.id) && p.translationStatus === 'completed').length,
+        [products, selectedProductIds]
+    );
+    const selectedTranslatedIds = useMemo(() =>
+        products.filter(p => selectedProductIds.includes(p.id) && p.translationStatus === 'completed').map(p => p.id),
+        [products, selectedProductIds]
+    );
+
     const handleSelectAll = () => {
         if (allFilteredSelected) clearSelection();
         else selectAll(filtered.map((p) => p.id));
@@ -129,6 +186,7 @@ export default function EditingListPage() {
         <MainLayout>
             <style>{`
                 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+                @keyframes tooltipFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>
 
             {/* 페이지 헤더 */}
@@ -282,6 +340,7 @@ export default function EditingListPage() {
                         <ProductListItem
                             key={product.id}
                             product={product}
+                            data-job-id={product.jobId}
                             selected={selectedProductIds.includes(product.id)}
                             onToggle={() => toggleSelectProduct(product.id)}
                             onClick={() => navigate(`/editing/${product.id}`)}
@@ -292,12 +351,28 @@ export default function EditingListPage() {
 
             <BulkActionBar
                 selectedCount={selectedProductIds.length}
-                translateCount={products.filter((p) => selectedProductIds.includes(p.id) && (p.translationStatus === 'pending' || p.translationStatus === 'failed')).length}
-                registerCount={products.filter((p) => selectedProductIds.includes(p.id) && p.translationStatus === 'completed').length}
+                translateCount={selectedTranslateCount}
+                registerCount={selectedRegisterCount}
                 onTranslate={openTranslationModal}
-                onRegister={() => { }}
+                onRegister={() => {
+                    if (selectedTranslatedIds.length > 0) {
+                        startRegistrationBatch(selectedTranslatedIds);
+                        clearSelection();
+                    }
+                }}
                 onDelete={() => deleteProducts(selectedProductIds)}
                 onClear={clearSelection}
+            />
+
+            <TranslationModal
+                isOpen={isTranslationModalOpen}
+                onClose={closeTranslationModal}
+                selectedCount={selectedProductIds.length}
+                onStart={(targets) => {
+                    startTranslationJobs(selectedProductIds, targets);
+                    closeTranslationModal();
+                    clearSelection();
+                }}
             />
         </MainLayout>
     );

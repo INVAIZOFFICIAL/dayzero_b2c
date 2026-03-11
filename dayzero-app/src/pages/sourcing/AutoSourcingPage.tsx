@@ -158,10 +158,11 @@ export default function AutoSourcingPage() {
                 addNotification({
                     id: `notif-${Date.now()}-${Math.random()}`,
                     type: 'auto',
-                    title: `${setting.provider} ${setting.category} 자동 수집이 등록되었습니다`,
-                    status: 'completed',
+                    title: `${setting.provider} ${setting.category} 자동 수집이 등록되었어요`,
+                    status: 'scheduled',
                     currentCount: 0,
-                    totalCount: 0,
+                    totalCount: 50,
+                    timeString: '07:00',
                     createdAt: new Date().toISOString(),
                 });
             });

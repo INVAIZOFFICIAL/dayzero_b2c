@@ -5,11 +5,13 @@ export interface CollectionNotification {
     id: string;
     type: 'url' | 'auto';
     title: string;
-    status: 'running' | 'completed';
+    status: 'running' | 'completed' | 'scheduled';
     currentCount: number;
     totalCount: number;
     createdAt: string;
     completedAt?: string;
+    timeString?: string;
+    isRead?: boolean;
 }
 
 interface SourcingState {
@@ -38,11 +40,16 @@ interface SourcingState {
     updateJob: (id: string, updates: Partial<SourcingJob>) => void;
     addSchedule: (schedule: AutoSchedule) => void;
     updateSchedule: (id: string, updates: Partial<AutoSchedule>) => void;
+    deleteSchedule: (id: string) => void;
+    reorderSchedules: (schedules: AutoSchedule[]) => void;
     toggleSchedule: (id: string) => void;
     setUnprocessedCount: (count: number) => void;
+    clearUnprocessedCount: () => void;
     addProduct: (product: SourcedProduct) => void;
     addNotification: (notification: CollectionNotification) => void;
     updateNotification: (id: string, updates: Partial<CollectionNotification>) => void;
+    removeNotification: (id: string) => void;
+    markNotificationRead: (id: string) => void;
     markAllRead: () => void;
     triggerParticle: (origin: { x: number; y: number } | null) => void;
     triggerFlyingBall: (origin: { x: number; y: number }) => void;
@@ -50,70 +57,15 @@ interface SourcingState {
 }
 
 export const useSourcingStore = create<SourcingState>((set) => ({
-    jobs: [
-        {
-            id: 'job-1',
-            type: 'AUTO',
-            provider: '올리브영',
-            categorySummary: '뷰티 인기상품',
-            status: 'running',
-            totalCount: 32,
-            currentCount: 4,
-            createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-        },
-        {
-            id: 'job-2',
-            type: 'AUTO',
-            provider: '쿠팡',
-            categorySummary: '생활용품 전체',
-            status: 'completed',
-            totalCount: 50,
-            currentCount: 50,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2.2).toISOString(),
-            completedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-            durationString: '2분 10초',
-            duplicateCount: 2,
-        },
-        {
-            id: 'job-3',
-            type: 'AUTO',
-            provider: '다이소',
-            categorySummary: '전체 인기상품',
-            status: 'completed',
-            totalCount: 30,
-            currentCount: 30,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5.1).toISOString(),
-            completedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-            durationString: '1분 45초',
-            duplicateCount: 0,
-        }
-    ],
-    schedules: [
-        {
-            id: 'sched-1',
-            provider: '올리브영',
-            categoryPath: '뷰티 - 스킨케어',
-            criteria: '인기상품',
-            targetCount: 50,
-            timeString: '07:00',
-            isActive: true,
-            lastRunAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        },
-        {
-            id: 'sched-2',
-            provider: '쿠팡',
-            categoryPath: '생활용품 - 세제/세정',
-            criteria: '전체상품',
-            targetCount: 30,
-            timeString: '07:00',
-            isActive: true,
-            lastRunAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-        }
-    ],
+    jobs: [],
+    schedules: [],
     unprocessedProductCount: 0,
     products: [],
-    notifications: [],
-    unreadCount: 0,
+    notifications: [
+        { id: 'n-2', type: 'url', title: '쿠팡 URL 수집', status: 'completed', currentCount: 8, totalCount: 8, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), isRead: false },
+        { id: 'n-3', type: 'auto', title: '다이소 자동 수집', status: 'completed', currentCount: 15, totalCount: 15, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), isRead: false },
+    ],
+    unreadCount: 2,
     particleOrigin: null,
     flyingBalls: [],
     selectedAutoFilter: '전체',
@@ -143,11 +95,19 @@ export const useSourcingStore = create<SourcingState>((set) => ({
         schedules: state.schedules.map((s) => s.id === id ? { ...s, ...updates } : s)
     })),
 
+    deleteSchedule: (id) => set((state) => ({
+        schedules: state.schedules.filter((s) => s.id !== id),
+    })),
+
+    reorderSchedules: (schedules) => set({ schedules }),
+
     toggleSchedule: (id) => set((state) => ({
         schedules: state.schedules.map((s) => s.id === id ? { ...s, isActive: !s.isActive } : s)
     })),
 
     setUnprocessedCount: (count) => set({ unprocessedProductCount: count }),
+
+    clearUnprocessedCount: () => set({ unprocessedProductCount: 0 }),
 
     addProduct: (product) => set((state) => ({
         products: [product, ...state.products],
@@ -165,7 +125,23 @@ export const useSourcingStore = create<SourcingState>((set) => ({
         ),
     })),
 
-    markAllRead: () => set({ unreadCount: 0 }),
+    removeNotification: (id) => set((state) => ({
+        notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+
+    markNotificationRead: (id) => set((state) => {
+        const notif = state.notifications.find((n) => n.id === id);
+        if (!notif || notif.isRead) return state;
+        return {
+            notifications: state.notifications.map((n) => n.id === id ? { ...n, isRead: true } : n),
+            unreadCount: Math.max(0, state.unreadCount - 1),
+        };
+    }),
+
+    markAllRead: () => set((state) => ({
+        notifications: state.notifications.map(n => ({ ...n, isRead: true })),
+        unreadCount: 0
+    })),
 
     triggerParticle: (origin) => set({ particleOrigin: origin }),
 

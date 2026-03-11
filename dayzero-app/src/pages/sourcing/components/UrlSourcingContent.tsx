@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { SOURCING_PROVIDERS, MOCK_URL_TO_PROVIDER } from '../../../types/sourcing';
 import type { SourcingProvider, SourcedProduct } from '../../../types/sourcing';
 import { useSourcingStore } from '../../../store/useSourcingStore';
+import { useEditingStore } from '../../../store/useEditingStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { Link2, AlertCircle, Loader2, CheckCircle2, XCircle, ArrowRight, X } from 'lucide-react';
 import { useOnboarding } from '../../../components/onboarding/OnboardingContext';
@@ -24,6 +25,7 @@ export const UrlSourcingContent = () => {
     const { state: onboardingState } = useOnboarding();
 
     const { urls, parsedUrls, isCollecting, collectionStarted } = urlSourcing;
+    const [lastJobId, setLastJobId] = useState<string | null>(null);
 
     const setUrls = (updater: import('react').SetStateAction<string[]>) => {
         const current = useSourcingStore.getState().urlSourcing.urls;
@@ -49,19 +51,19 @@ export const UrlSourcingContent = () => {
             return {
                 id: `url-${index}`,
                 url,
-                provider,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                provider: provider || ('기타' as any),
                 status: 'idle',
-                error: !url.startsWith('http') ? '올바른 URL을 입력해주세요'
-                    : !provider ? '지원하지 않는 소싱처예요'
-                        : undefined
+                error: !url.startsWith('http') ? '올바른 URL을 입력해주세요' : undefined
             };
         });
 
         setParsedUrls(newParsed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [urls, collectionStarted]);
 
-    const validCount = parsedUrls.filter(p => p.provider && !p.error).length;
+    // Use urls.length instead of parsedUrls since parsedUrls might not update instantly, or just check parsing correctly. Wait, parsedUrls length is already derived from urls.
+    const validCount = parsedUrls.filter(p => !p.error).length;
     const completedCount = parsedUrls.filter(p => p.status === 'completed' || p.status === 'failed').length;
     const isAllCompleted = collectionStarted && completedCount === parsedUrls.length;
     const successCount = parsedUrls.filter(p => p.status === 'completed').length;
@@ -79,7 +81,7 @@ export const UrlSourcingContent = () => {
             totalCount: validCount,
             createdAt: new Date().toISOString(),
         });
-
+        setLastJobId(notifId);
         setCollectionStarted(true);
         setIsCollecting(true);
 
@@ -94,25 +96,29 @@ export const UrlSourcingContent = () => {
 
             await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 2500));
 
-            let isSuccess = Math.random() > 0.1;
-            const currentStoreState = useSourcingStore.getState().urlSourcing;
-
-            if (!isSuccess && currentStoreState.hasFailedOnce) {
-                isSuccess = true;
-            } else if (!isSuccess) {
-                setUrlSourcing({ hasFailedOnce: true });
+            let isProductUrl = true;
+            try {
+                const urlObj = new URL(current.url);
+                if (urlObj.pathname === '/' || urlObj.pathname === '') {
+                    isProductUrl = false;
+                }
+            } catch (e) {
+                isProductUrl = false;
             }
 
-            if (isSuccess && current.provider) {
+            let isSuccess = isProductUrl;
+
+            if (isSuccess) {
                 const kpopProviders = ['알라딘', 'Ktown4u', '케이타운포유', 'YES24', '메이크스타', '위버스샵', 'Weverse Shop', 'FANS', '팬스'];
-                const isKpop = kpopProviders.some(p => current.provider?.toLowerCase().includes(p.toLowerCase()));
+                const isKpop = kpopProviders.some(p => (current.provider || '').toLowerCase().includes(p.toLowerCase()));
 
                 const kpopTitles = [
                     '[예약판매] 뉴진스 (NewJeans) - 2nd EP [Get Up] (Bunny Beach Bag ver.)',
                     '세븐틴 (SEVENTEEN) - 10th Mini Album [FML] (일반반)',
                     '르세라핌 (LE SSERAFIM) - 1st Studio Album [UNFORGIVEN] (Weverse Albums ver.)',
                     '스트레이 키즈 (Stray Kids) - 5-STAR (Limited Edition)',
-                    '에스파 (aespa) - 3rd Mini Album [MY WORLD] (Poster ver.)'
+                    '에스파 (aespa) - 3rd Mini Album [MY WORLD] (Poster ver.)',
+                    '르세라핌 (LE SSERAFIM) - 3rd Mini Album [EASY] (Weverse Albums ver.)'
                 ];
                 const generalTitles = [
                     '[단독기획] 닥터지 레드 블레미쉬 클리어 수딩 크림 70ml+30ml 세트',
@@ -128,10 +134,11 @@ export const UrlSourcingContent = () => {
 
                 const mockProduct: SourcedProduct = {
                     id: `prod-${Date.now()}-${i}`,
-                    jobId: 'manual-url-job',
-                    provider: current.provider,
+                    jobId: notifId,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    provider: current.provider || ('기타' as any),
                     title: realTitle,
-                    thumbnailUrl: '',
+                    thumbnailUrl: 'https://via.placeholder.com/300/F5F6F8/8B95A1?text=Product',
                     originalPriceKrw: orgPrice,
                     optionCount: Math.floor(Math.random() * 5),
                     sourceUrl: current.url,
@@ -139,6 +146,47 @@ export const UrlSourcingContent = () => {
                     qoo10Category: null,
                     editStatus: 'pending'
                 };
+
+                const costKrw = orgPrice + onboardingState.domesticShipping + onboardingState.prepCost + onboardingState.intlShipping;
+                const margin = onboardingState.marginType === '%' ? costKrw * (onboardingState.marginValue / 100) : onboardingState.marginValue;
+                const salePriceKrw = costKrw + margin;
+                const salePriceJpy = Math.round(salePriceKrw * 0.11);
+
+                // Realistic category mapping
+                const providerName = typeof current.provider === 'string' ? current.provider : (current.provider as any)?.name || '기타';
+                let catId = '100000001';
+                let catPath = '뷰티 > 스킨케어 > 크림';
+
+                if (isKpop || providerName.includes('알라딘') || providerName.includes('케이타운') || providerName.includes('Weverse')) {
+                    catId = '200000001';
+                    catPath = '엔터테인먼트 > 음반 > K-POP';
+                } else if (providerName.includes('쿠팡') || providerName.includes('다이소')) {
+                    catId = '300000001';
+                    catPath = '생활용품 > 세제/세정 > 주방세제';
+                }
+
+                useEditingStore.getState().addProduct({
+                    id: mockProduct.id,
+                    titleKo: mockProduct.title,
+                    descriptionKo: '수집된 상세설명 입니다.',
+                    options: [],
+                    titleJa: null,
+                    descriptionJa: null,
+                    thumbnails: [{ id: `thumb-${mockProduct.id}`, url: mockProduct.thumbnailUrl, translatedUrl: null, translationStatus: 'none', backgroundRemoved: false }],
+                    detailImages: [],
+                    salePriceJpy,
+                    qoo10CategoryId: catId,
+                    qoo10CategoryPath: catPath,
+                    provider: mockProduct.provider,
+                    thumbnailUrl: mockProduct.thumbnailUrl,
+                    originalPriceKrw: mockProduct.originalPriceKrw,
+                    translationStatus: 'pending',
+                    editStatus: 'pending',
+                    lastSavedAt: null,
+                    createdAt: new Date().toISOString(),
+                    isRead: false,
+                    jobId: mockProduct.jobId,
+                });
 
                 addProduct(mockProduct);
                 setParsedUrls(prev => prev.map(p =>
@@ -148,7 +196,7 @@ export const UrlSourcingContent = () => {
                 successProcessed++;
             } else {
                 setParsedUrls(prev => prev.map(p =>
-                    p.id === current.id ? { ...p, status: 'failed', error: '소싱처 접속이 일시적으로 불안정해요. 잠시 후 재시도해보세요' } : p
+                    p.id === current.id ? { ...p, status: 'failed', error: '제품의 상세 페이지 주소가 아닐 수 있어요. 상세 페이지에서 URL을 다시 복사해주세요.' } : p
                 ));
             }
 
@@ -168,7 +216,7 @@ export const UrlSourcingContent = () => {
                 id: `job-url-${Date.now()}`,
                 type: 'URL',
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        provider: urlsSnapshot.find(p => !p.error)?.provider || '기타' as any,
+                provider: urlsSnapshot.find(p => !p.error)?.provider || '기타' as any,
                 categorySummary: `${successProcessed}건 수동 수집`,
                 status: 'completed',
                 totalCount: urlsSnapshot.filter(p => !p.error).length,
@@ -198,12 +246,13 @@ export const UrlSourcingContent = () => {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         const current = parsedUrls.find(p => p.id === id);
-        if (current && current.provider) {
+        if (current) {
             const mockProduct: SourcedProduct = {
                 id: `prod-retry-${Date.now()}`,
                 jobId: 'manual-url-job',
-                provider: current.provider,
-                title: `${current.provider} 재시도 상품`,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                provider: current.provider || ('기타' as any),
+                title: `${current.provider || '기타'} 재시도 상품`,
                 thumbnailUrl: 'https://via.placeholder.com/150/F5F6F8/8B95A1?text=Retry',
                 originalPriceKrw: 15000,
                 optionCount: 2,
@@ -220,11 +269,19 @@ export const UrlSourcingContent = () => {
     };
 
     const handleEditClick = () => {
-        navigate('/edit');
+        setUrls([]);
+        setCollectionStarted(false);
+        const url = lastJobId ? `/editing?focusJobId=${lastJobId}` : '/editing';
+        navigate(url);
+    };
+
+    const handleProviderClick = (e: React.MouseEvent, p: { name: string; url: string }) => {
+        e.preventDefault();
+        window.open(p.url, '_blank');
     };
 
     return (
-        <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+        <div style={{ animation: 'fadeInUp 0.4s ease', position: 'relative' }}>
             {/* Info Callout */}
             <div style={{ background: colors.bg.faint, borderRadius: '12px', padding: '16px', marginBottom: '32px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <Link2 size={16} color={colors.primary} style={{ marginTop: '3px', flexShrink: 0 }} />
@@ -269,12 +326,12 @@ export const UrlSourcingContent = () => {
                                 padding: '6px 10px',
                                 borderRadius: '20px',
                                 background: colors.bg.surface,
-                                border: `1px solid ${p.provider ? colors.border.default : colors.dangerLight}`,
+                                border: `1px solid ${!p.error ? colors.border.default : colors.dangerLight}`,
                                 boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                             }}>
-                                {p.provider ? (
+                                {!p.error ? (
                                     <>
-                                        <img src={SOURCING_PROVIDERS.find(s => s.name === p.provider)?.logo} alt={p.provider} style={{ width: 16, height: 16, borderRadius: 4 }} />
+                                        {p.provider && <img src={SOURCING_PROVIDERS.find(s => s.name === p.provider)?.logo} alt={p.provider} style={{ width: 16, height: 16, borderRadius: 4 }} />}
                                         <span style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.url}</span>
                                         <CheckCircle2 size={14} color={colors.success} />
                                     </>
@@ -364,7 +421,7 @@ export const UrlSourcingContent = () => {
                                     }
                                 }
                             }}
-                            placeholder={urls.length === 0 ? "상품 URL을 입력하고 엔터 및 스페이스 바를 누르세요" : ""}
+                            placeholder={urls.length === 0 ? "지원 소싱처의 상품 URL을 입력하고 엔터 및 스페이스 바를 누르세요" : ""}
                             style={{
                                 flex: 1,
                                 minWidth: '200px',
@@ -380,30 +437,29 @@ export const UrlSourcingContent = () => {
                         />
                     </div>
 
-                    {/* Supported Providers Grid */}
                     <div style={{ marginTop: '24px', borderTop: `1px solid ${colors.border.default}`, paddingTop: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: colors.text.muted, marginBottom: '12px' }}>
-                            지원 소싱처
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: colors.text.muted }}>
+                                지원 소싱처에서 찾아보세요
+                            </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                             {SOURCING_PROVIDERS.map(p => (
-                                <a
+                                <button
                                     key={p.name}
-                                    href={p.url}
-                                    target="_blank"
-                                    rel="noreferrer"
+                                    onClick={(e) => handleProviderClick(e as any, p)}
                                     style={{
-                                        textDecoration: 'none',
+                                        border: `1px solid ${colors.border.default}`,
+                                        background: colors.bg.page,
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '8px',
                                         padding: '12px',
-                                        background: colors.bg.page,
                                         borderRadius: '8px',
-                                        border: `1px solid ${colors.border.default}`,
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        color: 'inherit'
+                                        color: 'inherit',
+                                        textAlign: 'left'
                                     }}
                                     onMouseOver={e => {
                                         e.currentTarget.style.background = colors.bg.subtle;
@@ -416,7 +472,7 @@ export const UrlSourcingContent = () => {
                                 >
                                     <img src={p.logo} alt={p.name} style={{ width: '24px', height: '24px', borderRadius: '4px' }} />
                                     <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary }}>{p.name}</span>
-                                </a>
+                                </button>
                             ))}
                         </div>
                     </div>

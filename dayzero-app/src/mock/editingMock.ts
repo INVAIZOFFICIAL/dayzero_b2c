@@ -54,6 +54,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
     },
     {
         id: 'prod-2',
@@ -73,6 +74,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
     },
     {
         id: 'prod-3',
@@ -92,6 +94,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
     },
     {
         id: 'prod-4',
@@ -111,6 +114,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
     },
     {
         id: 'prod-5',
@@ -130,6 +134,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 11).toISOString(),
     },
     {
         id: 'prod-6',
@@ -149,6 +154,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
     },
     {
         id: 'prod-7',
@@ -168,6 +174,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 13).toISOString(),
     },
     {
         id: 'prod-8',
@@ -187,10 +194,11 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed',
         editStatus: 'completed',
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
     },
     // 번역 완료 but 편집 미완료 (5건)
     ...([
-        { id: 'prod-9',  title: '[다이소] 실리콘 주방 장갑 2p', ja: 'シリコン キッチングローブ 2個セット', price: 580, cat: 'キッチン・台所 > キッチングッズ', catId: 'qoo10-kitchen', krw: 3000, provider: '다이소' },
+        { id: 'prod-9', title: '[다이소] 실리콘 주방 장갑 2p', ja: 'シリコン キッチングローブ 2個セット', price: 580, cat: 'キッチン・台所 > キッチングッズ', catId: 'qoo10-kitchen', krw: 3000, provider: '다이소' },
         { id: 'prod-10', title: '[다이소] 분리수거함 대형 3단', ja: '分別ゴミ箱 大型 3段', price: 980, cat: '日用品・生活雑貨 > ゴミ箱・ダストボックス', catId: 'qoo10-dustbin', krw: 5000, provider: '다이소' },
         { id: 'prod-11', title: '[다이소] 욕실 수납 선반 흡착식', ja: '浴室収納棚 吸盤式', price: 780, cat: '日用品・生活雑貨 > 浴室用品', catId: 'qoo10-bath', krw: 4000, provider: '다이소' },
         { id: 'prod-12', title: '[쿠팡] 에어팟 케이스 실리콘 커버', ja: 'AirPodsケース シリコンカバー', price: 680, cat: '家電・スマホ・カメラ > スマートフォンアクセサリー', catId: 'qoo10-phone', krw: 3500, provider: '쿠팡' },
@@ -213,6 +221,7 @@ const translatedProducts: ProductDetail[] = [
         translationStatus: 'completed' as const,
         editStatus: 'pending' as const,
         lastSavedAt: null,
+        createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
     })),
 ];
 
@@ -275,12 +284,26 @@ const pendingProducts: ProductDetail[] = pendingProductsData.map((p) => ({
     translationStatus: 'pending' as const,
     editStatus: 'pending' as const,
     lastSavedAt: null,
+    createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
 }));
 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 
+// n-2: 쿠팡 URL 수집 완료 8건, n-3: 다이소 자동 수집 완료 (다이소 pending 전체)
+const COUPANG_NEW_IDS = new Set(['prod-14','prod-15','prod-16','prod-17','prod-18','prod-19','prod-20','prod-21']);
+
 // 번역 완료(13건): 7~19일 전 수집 / 번역 필요(35건): 1~6일 전 수집
 export const MOCK_PRODUCTS: ProductDetail[] = [
-    ...translatedProducts.map((p, i) => ({ ...p, createdAt: daysAgo(7 + i) })),
-    ...pendingProducts.map((p, i) => ({ ...p, createdAt: daysAgo(Math.floor(i / 7) + 1) })),
+    ...translatedProducts.map((p, i) => ({ ...p, createdAt: daysAgo(7 + i), isRead: true })),
+    ...pendingProducts.map((p, i) => {
+        const isCoupangNew = COUPANG_NEW_IDS.has(p.id);
+        const isDaisoNew = p.provider === '다이소';
+        return {
+            ...p,
+            createdAt: daysAgo(Math.floor(i / 7) + 1),
+            isRead: !(isCoupangNew || isDaisoNew),
+            ...(isCoupangNew ? { jobId: 'n-2' } : {}),
+            ...(isDaisoNew ? { jobId: 'n-3' } : {}),
+        };
+    }),
 ];

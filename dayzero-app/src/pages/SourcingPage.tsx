@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSourcingStore } from '../store/useSourcingStore';
 import { MainLayout } from '../components/layout/MainLayout';
-import { SOURCING_PROVIDERS } from '../types/sourcing';
-import { Link2, Zap, Clock, LayoutGrid, Package, Check } from 'lucide-react';
+import { SOURCING_PROVIDERS, getProviderLogo } from '../types/sourcing';
+import { Link2, Zap, Clock, LayoutGrid, Package, Check, Trash2, GripVertical } from 'lucide-react';
 import { UrlSourcingContent } from './sourcing/components/UrlSourcingContent';
 import { colors } from '../design/tokens';
 
@@ -16,18 +16,29 @@ const formatLastRun = (dateString?: string) => {
     return `${yy}.${mm}.${dd}`;
 };
 
-const getProviderLogo = (providerName: string) => {
-    return SOURCING_PROVIDERS.find(p => p.name === providerName)?.logo || '/logos/default.png';
-};
 
 export default function SourcingPage() {
     const navigate = useNavigate();
     const {
-        schedules, toggleSchedule,
+        schedules, toggleSchedule, deleteSchedule, reorderSchedules,
         selectedAutoFilter: selectedFilter,
         setSelectedAutoFilter: setSelectedFilter
     } = useSourcingStore();
     const [activeTab, setActiveTab] = useState<'auto' | 'url'>('auto');
+    const [draggedId, setDraggedId] = useState<string | null>(null);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+
+    const handleDrop = (targetId: string) => {
+        if (!draggedId || draggedId === targetId) { setDraggedId(null); return; }
+        const newSchedules = [...schedules];
+        const fromIdx = newSchedules.findIndex(s => s.id === draggedId);
+        const toIdx = newSchedules.findIndex(s => s.id === targetId);
+        const [removed] = newSchedules.splice(fromIdx, 1);
+        newSchedules.splice(toIdx, 0, removed);
+        reorderSchedules(newSchedules);
+        setDraggedId(null);
+    };
 
     const renderTabs = () => (
         <div style={{
@@ -89,25 +100,12 @@ export default function SourcingPage() {
 
         return (
             <div style={{ marginBottom: '48px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, color: colors.text.primary }}>등록된 자동 수집 목록</h2>
-                    <button onClick={() => navigate('/sourcing/auto')} style={{
-                        background: 'none',
-                        color: colors.primary,
-                        border: 'none',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                    }}>
+                    <button onClick={() => navigate('/sourcing/auto')} style={{ background: 'none', color: colors.primary, border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         + 자동 수집 추가
                     </button>
                 </div>
-                <p style={{ fontSize: '14px', color: colors.text.tertiary, marginBottom: '24px' }}>
-                    스케줄에 맞춰 설정한 조건대로 상품을 주기적으로 알아서 수집해요.
-                </p>
 
                 {schedules.length > 0 && (
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -181,77 +179,86 @@ export default function SourcingPage() {
                     </div>
                 ) : (
                     <div key={selectedFilter} style={{ display: 'flex', flexDirection: 'column', gap: '12px', animation: 'fadeInUp 0.3s ease' }}>
-                        {filteredSchedules.map(schedule => (
-                            <div key={schedule.id} style={{
-                                background: colors.bg.surface,
-                                borderRadius: '16px',
-                                padding: '20px',
-                                border: `1px solid ${colors.border.default}`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                            }}>
+                        {filteredSchedules.map(schedule => {
+                            const isHovered = hoveredId === schedule.id;
+                            return (
                                 <div
-                                    onClick={() => navigate(`/sourcing/auto?edit=${schedule.id}`)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }}
+                                    key={schedule.id}
+                                    draggable
+                                    onDragStart={() => setDraggedId(schedule.id)}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={() => handleDrop(schedule.id)}
+                                    onDragEnd={() => setDraggedId(null)}
+                                    onMouseEnter={() => setHoveredId(schedule.id)}
+                                    onMouseLeave={() => setHoveredId(null)}
+                                    style={{
+                                        position: 'relative',
+                                        background: colors.bg.surface,
+                                        borderRadius: '16px',
+                                        padding: '20px 20px 20px 36px',
+                                        border: `1px solid ${draggedId === schedule.id ? colors.primary : colors.border.default}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        opacity: draggedId === schedule.id ? 0.5 : 1,
+                                        transition: 'opacity 0.15s, border-color 0.15s',
+                                        cursor: 'default',
+                                    }}
                                 >
-                                    <img src={getProviderLogo(schedule.provider)} alt={schedule.provider} style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${colors.border.default}` }} />
-                                    <div>
-                                        <div style={{ fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                                            {schedule.provider}에서
-                                            <span style={{ padding: '4px 8px', background: colors.primaryLight, color: colors.primary, borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <LayoutGrid size={12} />
-                                                {schedule.categoryPath}
-                                            </span>
-                                            카테고리 상품의
-                                            <span style={{ padding: '4px 8px', background: colors.primaryLight, color: colors.primary, borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Package size={12} />
-                                                {schedule.criteria}
-                                            </span>
-                                            을 수집해요.
-                                        </div>
-                                        <div style={{ fontSize: '13px', color: colors.text.tertiary, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Clock size={12} /> 매일 {schedule.timeString}
-                                            </span>
-                                            <span>•</span>
-                                            <span>마지막 실행: {formatLastRun(schedule.lastRunAt)}</span>
+                                    {/* Drag Handle — hover only */}
+                                    <div style={{ position: 'absolute', left: '10px', color: colors.text.muted, cursor: 'grab', display: 'flex', alignItems: 'center', opacity: isHovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+                                        <GripVertical size={18} />
+                                    </div>
+
+                                    <div
+                                        onClick={() => navigate(`/sourcing/auto?edit=${schedule.id}`)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer', minWidth: 0 }}
+                                    >
+                                        <img src={getProviderLogo(schedule.provider)} alt={schedule.provider} style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, flexShrink: 0 }} />
+                                        <div style={{ minWidth: 0 }}>
+                                            <div style={{ fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                                                {schedule.provider}에서
+                                                <span style={{ padding: '4px 8px', background: colors.primaryLight, color: colors.primary, borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <LayoutGrid size={12} />
+                                                    {schedule.categoryPath}
+                                                </span>
+                                                카테고리 상품의
+                                                <span style={{ padding: '4px 8px', background: colors.primaryLight, color: colors.primary, borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Package size={12} />
+                                                    {schedule.criteria}
+                                                </span>
+                                                을 수집해요.
+                                            </div>
+                                            <div style={{ fontSize: '13px', color: colors.text.tertiary, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Clock size={12} /> 매일 {schedule.timeString}
+                                                </span>
+                                                <span>•</span>
+                                                <span>마지막 실행: {formatLastRun(schedule.lastRunAt)}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Toggle Switch */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleSchedule(schedule.id);
-                                    }}
-                                    style={{
-                                        width: '44px',
-                                        height: '24px',
-                                        borderRadius: '12px',
-                                        background: schedule.isActive ? colors.primary : colors.border.default,
-                                        border: 'none',
-                                        position: 'relative',
-                                        cursor: 'pointer',
-                                        transition: 'background 0.2s',
-                                        padding: 0
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        borderRadius: '50%',
-                                        background: colors.bg.surface,
-                                        position: 'absolute',
-                                        top: '2px',
-                                        left: schedule.isActive ? '22px' : '2px',
-                                        transition: 'left 0.2s',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                    }} />
-                                </button>
-                            </div>
-                        ))}
+                                    {/* Delete Button — hover only */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); deleteSchedule(schedule.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: colors.text.muted, flexShrink: 0, borderRadius: '6px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.15s, color 0.15s', pointerEvents: isHovered ? 'auto' : 'none' }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.color = colors.danger)}
+                                        onMouseLeave={(e) => (e.currentTarget.style.color = colors.text.muted)}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+
+                                    {/* Toggle Switch */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); toggleSchedule(schedule.id); }}
+                                        style={{ width: '44px', height: '24px', borderRadius: '12px', background: schedule.isActive ? colors.primary : colors.border.default, border: 'none', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', padding: 0, flexShrink: 0 }}
+                                    >
+                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: colors.bg.surface, position: 'absolute', top: '2px', left: schedule.isActive ? '22px' : '2px', transition: 'left 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>

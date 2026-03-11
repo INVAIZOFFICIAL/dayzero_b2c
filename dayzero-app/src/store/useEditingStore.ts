@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import type { ProductDetail, TranslationJob, EditTabFilter } from '../types/editing';
-import { MOCK_PRODUCTS } from '../mock/editingMock';
+import type { ProductDetail, TranslationJob, EditTabFilter, TranslationBatch, RegistrationBatch } from '../types/editing';
 
 interface EditingState {
     products: ProductDetail[];
@@ -14,6 +13,10 @@ interface EditingState {
     // ED-01a 번역 작업
     translationJobs: TranslationJob[];
     isTranslationModalOpen: boolean;
+
+    // 배치 작업 (알림 패널용)
+    translationBatches: TranslationBatch[];
+    registrationBatches: RegistrationBatch[];
 
     // ED-02 현재 편집 상품
     currentEditProductId: string | null;
@@ -38,10 +41,23 @@ interface EditingState {
     updateProduct: (id: string, updates: Partial<ProductDetail>) => void;
     deleteProducts: (ids: string[]) => void;
     setCurrentEditProduct: (id: string | null) => void;
+    addProduct: (product: ProductDetail) => void;
+
+    markTranslationsRead: () => void;
+    markRegistrationsRead: () => void;
+    markTranslationJobRead: (id: string) => void;
+    markTranslationBatchRead: (id: string) => void;
+    markRegistrationBatchRead: (id: string) => void;
+    removeTranslationJob: (id: string) => void;
+    removeTranslationBatch: (id: string) => void;
+    removeRegistrationBatch: (id: string) => void;
+    startRegistrationBatch: (productIds: string[]) => void;
+    markProductsRead: (exceptJobId?: string) => void;
+    selectByJobId: (jobId: string) => void;
 }
 
-export const useEditingStore = create<EditingState>((set) => ({
-    products: [...MOCK_PRODUCTS].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+export const useEditingStore = create<EditingState>((set, get) => ({
+    products: [],
 
     selectedProductIds: [],
     activeTab: 'all',
@@ -50,6 +66,8 @@ export const useEditingStore = create<EditingState>((set) => ({
 
     translationJobs: [],
     isTranslationModalOpen: false,
+    translationBatches: [],
+    registrationBatches: [],
 
     currentEditProductId: null,
 
@@ -70,28 +88,64 @@ export const useEditingStore = create<EditingState>((set) => ({
     openTranslationModal: () => set({ isTranslationModalOpen: true }),
     closeTranslationModal: () => set({ isTranslationModalOpen: false }),
 
-    startTranslationJobs: (productIds, targets) =>
-        set((state) => {
-            const jobs: TranslationJob[] = productIds.map((pid) => {
-                const product = state.products.find((p) => p.id === pid);
-                return {
-                    id: `job-${pid}-${Date.now()}`,
-                    productId: pid,
-                    productTitleKo: product?.titleKo ?? pid,
-                    status: 'queued',
-                    targets,
-                };
-            });
+    startTranslationJobs: (productIds, targets) => {
+        const batchId = `tb-${Date.now()}`;
+        const newBatch: TranslationBatch = {
+            id: batchId,
+            totalCount: productIds.length,
+            currentCount: 0,
+            status: 'processing',
+            createdAt: new Date().toISOString(),
+            isRead: true,
+        };
 
-            // processing 상태로 전환
-            const updatedProducts = state.products.map((p) =>
-                productIds.includes(p.id)
-                    ? { ...p, translationStatus: 'processing' as const }
-                    : p
-            );
+        const newJobs: TranslationJob[] = productIds.map((pid) => {
+            const product = get().products.find((p) => p.id === pid);
+            return {
+                id: `job-${pid}-${Date.now()}`,
+                productId: pid,
+                productTitleKo: product?.titleKo ?? pid,
+                status: 'queued',
+                targets,
+                isRead: true
+            };
+        });
 
-            return { translationJobs: jobs, products: updatedProducts };
-        }),
+        // Update local state first
+        set((state) => ({
+            translationJobs: [...newJobs, ...state.translationJobs],
+            translationBatches: [newBatch, ...state.translationBatches],
+            products: state.products.map((p) =>
+                productIds.includes(p.id) ? { ...p, translationStatus: 'processing' } : p
+            ),
+        }));
+
+        // Simulate progress
+        let processedCount = 0;
+        const interval = setInterval(() => {
+            processedCount++;
+
+            const currentJob = newJobs[processedCount - 1];
+            if (currentJob) {
+                get().updateTranslationJob(currentJob.id, { status: 'completed' });
+            }
+
+            set((state) => ({
+                translationBatches: state.translationBatches.map(b =>
+                    b.id === batchId ? { ...b, currentCount: processedCount } : b
+                )
+            }));
+
+            if (processedCount >= productIds.length) {
+                clearInterval(interval);
+                set((state) => ({
+                    translationBatches: state.translationBatches.map(b =>
+                        b.id === batchId ? { ...b, status: 'completed', completedAt: new Date().toISOString() } : b
+                    )
+                }));
+            }
+        }, 1500 + Math.random() * 1000);
+    },
 
     updateTranslationJob: (jobId, updates) =>
         set((state) => {
@@ -107,10 +161,10 @@ export const useEditingStore = create<EditingState>((set) => ({
                     updatedProducts = state.products.map((p) =>
                         p.id === job.productId
                             ? {
-                                  ...p,
-                                  translationStatus: 'completed' as const,
-                                  titleJa: p.titleJa ?? `[번역완료] ${p.titleKo}`,
-                              }
+                                ...p,
+                                translationStatus: 'completed' as const,
+                                titleJa: p.titleJa ?? `[번역완료] ${p.titleKo}`,
+                            }
                             : p
                     );
                 }
@@ -143,4 +197,103 @@ export const useEditingStore = create<EditingState>((set) => ({
         })),
 
     setCurrentEditProduct: (id) => set({ currentEditProductId: id }),
+
+    addProduct: (product) => set((state) => ({
+        products: [{ ...product, isRead: false }, ...state.products],
+    })),
+
+    markTranslationsRead: () => set((state) => {
+        const anyUnread = state.translationJobs.some(j => !j.isRead) || state.translationBatches.some(b => !b.isRead);
+        if (!anyUnread) return state;
+        return {
+            translationJobs: state.translationJobs.map(j => j.isRead ? j : { ...j, isRead: true }),
+            translationBatches: state.translationBatches.map(b => b.isRead ? b : { ...b, isRead: true }),
+        };
+    }),
+
+    markRegistrationsRead: () => set((state) => {
+        if (state.registrationBatches.every(b => b.isRead)) return state;
+        return { registrationBatches: state.registrationBatches.map(b => b.isRead ? b : { ...b, isRead: true }) };
+    }),
+
+    markTranslationJobRead: (id) => set((state) => ({
+        translationJobs: state.translationJobs.map(j => j.id === id ? { ...j, isRead: true } : j)
+    })),
+
+    markTranslationBatchRead: (id) => set((state) => ({
+        translationBatches: state.translationBatches.map(b => b.id === id ? { ...b, isRead: true } : b)
+    })),
+
+    markRegistrationBatchRead: (id) => set((state) => ({
+        registrationBatches: state.registrationBatches.map(b => b.id === id ? { ...b, isRead: true } : b)
+    })),
+
+    removeTranslationJob: (id) => set((state) => ({
+        translationJobs: state.translationJobs.filter(j => j.id !== id),
+    })),
+
+    removeTranslationBatch: (id) => set((state) => ({
+        translationBatches: state.translationBatches.filter(b => b.id !== id),
+    })),
+
+    removeRegistrationBatch: (id) => set((state) => ({
+        registrationBatches: state.registrationBatches.filter(b => b.id !== id),
+    })),
+
+    startRegistrationBatch: (productIds) => {
+        const batchId = `rb-${Date.now()}`;
+        const newBatch: RegistrationBatch = {
+            id: batchId,
+            totalCount: productIds.length,
+            currentCount: 0,
+            status: 'processing',
+            createdAt: new Date().toISOString(),
+            isRead: true,
+        };
+
+        // Update local state first
+        set((state) => ({
+            registrationBatches: [newBatch, ...state.registrationBatches],
+            products: state.products.map((p) =>
+                productIds.includes(p.id) ? { ...p, editStatus: 'processing' } : p
+            ),
+        }));
+
+        // Simulate progress
+        let processedCount = 0;
+        const interval = setInterval(() => {
+            processedCount++;
+
+            set((state) => ({
+                registrationBatches: state.registrationBatches.map(b =>
+                    b.id === batchId ? { ...b, currentCount: processedCount } : b
+                )
+            }));
+
+            if (processedCount >= productIds.length) {
+                clearInterval(interval);
+                set((state) => ({
+                    registrationBatches: state.registrationBatches.map(b =>
+                        b.id === batchId ? { ...b, status: 'completed', completedAt: new Date().toISOString() } : b
+                    ),
+                    products: state.products.map((p) =>
+                        productIds.includes(p.id) ? { ...p, editStatus: 'completed' } : p
+                    ),
+                }));
+            }
+        }, 2000 + Math.random() * 1000);
+    },
+    markProductsRead: (exceptJobId) => set((state) => ({
+        products: state.products.map(p => {
+            if (p.isRead) return p;
+            if (exceptJobId && p.jobId === exceptJobId) return p;
+            return { ...p, isRead: true };
+        })
+    })),
+    selectByJobId: (jobId) => set((state) => {
+        const productIds = state.products
+            .filter(p => p.jobId === jobId)
+            .map(p => p.id);
+        return { selectedProductIds: productIds };
+    }),
 }));

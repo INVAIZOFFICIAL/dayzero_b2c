@@ -26,10 +26,37 @@
       "status": "completed",
       "completed_at": "2026-03-09T14:13:37.985Z",
       "duration_ms": 34587
+    },
+    {
+      "agent_id": "a8b138a4f904b6061",
+      "agent_type": "feature-dev:code-reviewer",
+      "started_at": "2026-03-11T05:58:32.973Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-03-11T05:59:19.184Z",
+      "duration_ms": 46211
+    },
+    {
+      "agent_id": "a89db373be992d413",
+      "agent_type": "feature-dev:code-reviewer",
+      "started_at": "2026-03-11T05:58:43.846Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-03-11T05:59:29.620Z",
+      "duration_ms": 45774
+    },
+    {
+      "agent_id": "aff8674faa889cd0f",
+      "agent_type": "feature-dev:code-reviewer",
+      "started_at": "2026-03-11T05:58:51.779Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-03-11T05:59:25.713Z",
+      "duration_ms": 33934
     }
   ],
-  "total_spawned": 3,
-  "total_completed": 3,
+  "total_spawned": 6,
+  "total_completed": 6,
   "total_failed": 0,
-  "last_updated": "2026-03-10T15:37:25.354Z"
+  "last_updated": "2026-03-11T05:59:29.723Z"
 }

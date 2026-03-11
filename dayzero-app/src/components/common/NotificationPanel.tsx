@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, CheckCircle2, Loader2, X, PackageOpen } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSourcingStore } from '../../store/useSourcingStore';
 import { useEditingStore } from '../../store/useEditingStore';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../design/tokens';
+import { ProgressBar, StatusIcon, EmptyState } from './StatusComponents';
 
 type PanelTab = '소싱' | '번역' | '등록';
 
@@ -14,22 +16,58 @@ interface Particle {
     dy: number;
 }
 
+const formatNotificationTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+
+    // Today
+    if (d.toDateString() === now.toDateString()) {
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+
+    // Yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) {
+        return '어제';
+    }
+
+    // 2 days ago or more
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yy}.${mm}.${dd}`;
+};
+
 export const NotificationPanel: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<PanelTab>('소싱');
     const [activeParticles, setActiveParticles] = useState<Particle[]>([]);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
     const bellRef = useRef<HTMLButtonElement>(null);
+    const navigate = useNavigate();
 
-    const { notifications, unreadCount, particleOrigin, markAllRead, triggerParticle } = useSourcingStore();
-    const { translationJobs } = useEditingStore();
+    const { notifications, unreadCount, particleOrigin, markAllRead: markSourcingRead, triggerParticle, removeNotification } = useSourcingStore();
+    const { translationBatches, registrationBatches, markTranslationsRead, markRegistrationsRead, removeTranslationBatch, removeRegistrationBatch } = useEditingStore();
 
-    const inProgressTranslations = translationJobs.filter((j) => j.status === 'queued' || j.status === 'processing');
-    const completedTranslations = translationJobs.filter((j) => j.status === 'completed');
-    const failedTranslations = translationJobs.filter((j) => j.status === 'failed');
+    const sortedNotifications = [...notifications].sort((a, b) => {
+        // 우선순위: running 은 항상 위로
+        if (a.status === 'running' && b.status !== 'running') return -1;
+        if (a.status !== 'running' && b.status === 'running') return 1;
 
-    const totalBadge = unreadCount + inProgressTranslations.length;
+        // 나머지는 최신순
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    const totalBadge =
+        unreadCount +
+        translationBatches.filter(b => !b.isRead).length +
+        registrationBatches.filter(b => !b.isRead).length;
 
     useEffect(() => {
+        // ... (particle effect logic remains the same)
         if (!particleOrigin || !bellRef.current) return;
 
         const bellRect = bellRef.current.getBoundingClientRect();
@@ -37,7 +75,7 @@ export const NotificationPanel: React.FC = () => {
         const bellCenterY = bellRect.top + bellRect.height / 2;
 
         setActiveParticles(
-            Array.from({ length: 7 }, (_, i) => ({
+            Array.from({ length: 7 }, (_, i: number) => ({
                 id: Date.now() + i,
                 originX: particleOrigin.x,
                 originY: particleOrigin.y,
@@ -57,7 +95,20 @@ export const NotificationPanel: React.FC = () => {
     const handleBellClick = () => {
         const next = !isOpen;
         setIsOpen(next);
-        if (next) markAllRead();
+        if (!next) {
+            markSourcingRead();
+            markTranslationsRead();
+            markRegistrationsRead();
+        }
+    };
+
+    const handleTabChange = (tab: PanelTab) => {
+        // Mark previous tab as read before switching
+        if (activeTab === '소싱') markSourcingRead();
+        if (activeTab === '번역') markTranslationsRead();
+        if (activeTab === '등록') markRegistrationsRead();
+
+        setActiveTab(tab);
     };
 
     const TABS: PanelTab[] = ['소싱', '번역', '등록'];
@@ -146,7 +197,7 @@ export const NotificationPanel: React.FC = () => {
                         width: '460px',
                         background: '#FFFFFF',
                         borderRadius: radius.xl,
-                        boxShadow: shadow.xl,
+                        boxShadow: shadow.lg,
                         border: `1px solid ${colors.border.default}`,
                         overflow: 'hidden',
                         animation: 'panelSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -162,7 +213,12 @@ export const NotificationPanel: React.FC = () => {
                         }}>
                             <span style={{ fontSize: font.size.lg, fontWeight: 700, color: colors.text.primary }}>작업 현황</span>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    markSourcingRead();
+                                    markTranslationsRead();
+                                    markRegistrationsRead();
+                                }}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
                             >
                                 <X size={18} color={colors.text.muted} />
@@ -175,145 +231,258 @@ export const NotificationPanel: React.FC = () => {
                             borderBottom: `1px solid ${colors.border.default}`,
                             padding: `0 ${spacing['6']}`,
                         }}>
-                            {TABS.map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    style={{
-                                        padding: `${spacing['3']} ${spacing['4']}`,
-                                        background: 'none',
-                                        border: 'none',
-                                        borderBottom: `2px solid ${activeTab === tab ? colors.primary : 'transparent'}`,
-                                        marginBottom: '-1px',
-                                        fontSize: font.size.base,
-                                        fontWeight: activeTab === tab ? 700 : 500,
-                                        color: activeTab === tab ? colors.primary : colors.text.tertiary,
-                                        cursor: 'pointer',
-                                        transition: 'color 0.15s',
-                                    }}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
+                            {TABS.map((tab) => {
+                                let badgeCount = 0;
+                                if (tab === '소싱') badgeCount = unreadCount;
+                                if (tab === '번역') badgeCount = translationBatches.filter(b => !b.isRead).length;
+                                if (tab === '등록') badgeCount = registrationBatches.filter(b => !b.isRead).length;
+
+                                return (
+                                    <button
+                                        key={tab}
+                                        onClick={() => handleTabChange(tab)}
+                                        style={{
+                                            padding: `${spacing['3']} ${spacing['4']}`,
+                                            background: 'none',
+                                            border: 'none',
+                                            borderBottom: `2px solid ${activeTab === tab ? colors.primary : 'transparent'}`,
+                                            marginBottom: '-1px',
+                                            fontSize: font.size.base,
+                                            fontWeight: activeTab === tab ? 700 : 500,
+                                            color: activeTab === tab ? colors.primary : colors.text.tertiary,
+                                            cursor: 'pointer',
+                                            transition: 'color 0.15s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}
+                                    >
+                                        {tab}
+                                        {badgeCount > 0 && (
+                                            <div style={{
+                                                background: colors.danger,
+                                                color: '#FFFFFF',
+                                                borderRadius: '10px',
+                                                minWidth: '18px',
+                                                height: '18px',
+                                                fontSize: '10px',
+                                                fontWeight: 700,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: '0 4px',
+                                            }}>
+                                                {badgeCount}
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Content */}
-                        <div style={{ overflowY: 'auto', maxHeight: '480px' }}>
+                        <div style={{ overflowY: 'auto', height: '480px' }}>
                             {activeTab === '소싱' && (
-                                notifications.length === 0 ? (
-                                    <EmptyState label="진행 중인 수집이 없어요" />
+                                sortedNotifications.length === 0 ? (
+                                    <EmptyState label="수집 기록이 없어요" />
                                 ) : (
-                                    notifications.map((n) => (
-                                        <div key={n.id} style={{
-                                            padding: `${spacing['5']} ${spacing['6']}`,
-                                            borderBottom: `1px solid ${colors.bg.page}`,
-                                        }}>
-                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing['4'] }}>
-                                                <StatusIcon status={n.status === 'completed' ? 'completed' : 'running'} />
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.primary, marginBottom: spacing['1'] }}>
-                                                        {n.title}
-                                                    </div>
-                                                    {n.type === 'auto' ? (
-                                                        <div style={{ fontSize: font.size.sm, color: colors.text.tertiary }}>
-                                                            내일 오전 07:00부터 자동 실행돼요.
-                                                        </div>
-                                                    ) : n.status === 'running' ? (
-                                                        <>
-                                                            <div style={{ fontSize: font.size.sm, color: colors.text.tertiary, marginBottom: spacing['2'] }}>
-                                                                수집 중... {n.currentCount}/{n.totalCount}건
+                                    sortedNotifications.map((n: any) => {
+                                        const isDismissible = n.status === 'completed' || n.status === 'scheduled';
+                                        const isHovered = hoveredId === n.id;
+                                        return (
+                                            <div key={n.id}
+                                                onMouseEnter={() => setHoveredId(n.id)}
+                                                onMouseLeave={() => setHoveredId(null)}
+                                                onClick={() => {
+                                                    if (n.status === 'completed') {
+                                                        markSourcingRead();
+                                                        markTranslationsRead();
+                                                        markRegistrationsRead();
+                                                        setIsOpen(false);
+                                                        navigate(`/editing?focusJobId=${n.id}`);
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: `${spacing['5']} ${spacing['6']}`,
+                                                    borderBottom: `1px solid ${colors.bg.page}`,
+                                                    background: !n.isRead ? '#F8FAFF' : 'transparent',
+                                                    transition: 'background 0.2s',
+                                                    cursor: n.status === 'completed' ? 'pointer' : 'default',
+                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing['4'] }}>
+                                                    <StatusIcon status={n.status} />
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing['1'] }}>
+                                                            <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {n.title}
                                                             </div>
-                                                            <ProgressBar value={n.currentCount} max={n.totalCount} />
-                                                        </>
-                                                    ) : (
-                                                        <div style={{ fontSize: font.size.sm, color: colors.success, fontWeight: 600 }}>
-                                                            {n.totalCount}건 중 {n.currentCount}건 수집 완료
+                                                            {isDismissible && isHovered ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            ) : (
+                                                                <span style={{ fontSize: font.size.sm, color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}>
+                                                                    {formatNotificationTime(n.createdAt)}
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                        {n.status === 'running' ? (
+                                                            <>
+                                                                <div style={{ fontSize: font.size.sm, color: colors.text.tertiary, marginBottom: spacing['2'] }}>
+                                                                    수집 중... {n.currentCount}/{n.totalCount}건
+                                                                </div>
+                                                                <ProgressBar value={n.currentCount} max={n.totalCount} />
+                                                            </>
+                                                        ) : n.status === 'completed' ? (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.success, fontWeight: 600 }}>
+                                                                {n.totalCount}건 중 {n.currentCount}건 수집 완료
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.text.tertiary }}>
+                                                                내일 오전 {('timeString' in n ? n.timeString : '07:00')}에 실행돼요.
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )
                             )}
 
                             {activeTab === '번역' && (
-                                translationJobs.length === 0 ? (
-                                    <EmptyState label="진행 중인 번역이 없어요" />
+                                translationBatches.length === 0 ? (
+                                    <EmptyState label="번역 기록이 없어요" />
                                 ) : (
-                                    <>
-                                        {inProgressTranslations.length > 0 && (
-                                            <SectionLabel label={`번역 중 ${inProgressTranslations.length}개`} />
-                                        )}
-                                        {inProgressTranslations.map((job) => (
-                                            <div key={job.id} style={{
-                                                padding: `${spacing['4']} ${spacing['6']}`,
-                                                borderBottom: `1px solid ${colors.bg.page}`,
-                                                display: 'flex', alignItems: 'center', gap: spacing['4'],
-                                            }}>
-                                                <StatusIcon status="running" />
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {job.productTitleKo}
-                                                    </div>
-                                                    <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginTop: '2px' }}>
-                                                        {job.targets.join(', ')} 번역 중
+                                    [...translationBatches].sort((a, b) => {
+                                        const isARunning = a.status === 'processing';
+                                        const isBRunning = b.status === 'processing';
+                                        if (isARunning && !isBRunning) return -1;
+                                        if (!isARunning && isBRunning) return 1;
+                                        return 0;
+                                    }).map((batch) => {
+                                        const isRunning = batch.status === 'processing';
+                                        const isHovered = hoveredId === `t-${batch.id}`;
+                                        return (
+                                            <div key={batch.id}
+                                                onMouseEnter={() => setHoveredId(`t-${batch.id}`)}
+                                                onMouseLeave={() => setHoveredId(null)}
+                                                style={{
+                                                    padding: `${spacing['5']} ${spacing['6']}`,
+                                                    borderBottom: `1px solid ${colors.bg.page}`,
+                                                    background: !batch.isRead ? '#F8FAFF' : 'transparent',
+                                                    transition: 'background 0.2s',
+                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing['4'] }}>
+                                                    <StatusIcon status={isRunning ? 'running' : batch.status} />
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing['1'] }}>
+                                                            <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                상품 번역
+                                                            </div>
+                                                            {!isRunning && isHovered ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); removeTranslationBatch(batch.id); }}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            ) : (
+                                                                <span style={{ fontSize: font.size.sm, color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}>
+                                                                    {formatNotificationTime(batch.createdAt)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {isRunning ? (
+                                                            <>
+                                                                <div style={{ fontSize: font.size.sm, color: colors.text.tertiary, marginBottom: spacing['2'] }}>
+                                                                    번역 중... {batch.currentCount}/{batch.totalCount}건
+                                                                </div>
+                                                                <ProgressBar value={batch.currentCount} max={batch.totalCount} />
+                                                            </>
+                                                        ) : batch.status === 'completed' ? (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.success, fontWeight: 600 }}>
+                                                                {batch.totalCount}건 중 {batch.currentCount}건 번역 완료
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.danger, fontWeight: 600 }}>
+                                                                번역 실패
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
-
-                                        {completedTranslations.length > 0 && (
-                                            <>
-                                                <SectionLabel label={`번역 완료 ${completedTranslations.length}개`} />
-                                                {completedTranslations.map((job) => (
-                                                    <div key={job.id} style={{
-                                                        padding: `${spacing['4']} ${spacing['6']}`,
-                                                        borderBottom: `1px solid ${colors.bg.page}`,
-                                                        display: 'flex', alignItems: 'center', gap: spacing['4'],
-                                                    }}>
-                                                        <StatusIcon status="completed" />
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <div style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                {job.productTitleKo}
-                                                            </div>
-                                                            <div style={{ fontSize: font.size.xs, color: colors.success, marginTop: '2px', fontWeight: 600 }}>
-                                                                번역 완료
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </>
-                                        )}
-
-                                        {failedTranslations.length > 0 && (
-                                            <>
-                                                <SectionLabel label={`번역 실패 ${failedTranslations.length}개`} />
-                                                {failedTranslations.map((job) => (
-                                                    <div key={job.id} style={{
-                                                        padding: `${spacing['4']} ${spacing['6']}`,
-                                                        borderBottom: `1px solid ${colors.bg.page}`,
-                                                        display: 'flex', alignItems: 'center', gap: spacing['4'],
-                                                    }}>
-                                                        <StatusIcon status="failed" />
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <div style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                {job.productTitleKo}
-                                                            </div>
-                                                            <div style={{ fontSize: font.size.xs, color: colors.danger, marginTop: '2px', fontWeight: 600 }}>
-                                                                번역 실패
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </>
-                                        )}
-                                    </>
+                                        );
+                                    })
                                 )
                             )}
 
                             {activeTab === '등록' && (
-                                <EmptyState label="등록된 작업이 없어요" />
+                                registrationBatches.length === 0 ? (
+                                    <EmptyState label="등록 기록이 없어요" />
+                                ) : (
+                                    [...registrationBatches].sort((a, b) => {
+                                        if (a.status === 'processing' && b.status !== 'processing') return -1;
+                                        if (b.status === 'processing' && a.status !== 'processing') return 1;
+                                        return 0;
+                                    }).map((batch) => {
+                                        const isRunning = batch.status === 'processing';
+                                        const isHovered = hoveredId === `r-${batch.id}`;
+                                        return (
+                                            <div key={batch.id}
+                                                onMouseEnter={() => setHoveredId(`r-${batch.id}`)}
+                                                onMouseLeave={() => setHoveredId(null)}
+                                                style={{
+                                                    padding: `${spacing['5']} ${spacing['6']}`,
+                                                    borderBottom: `1px solid ${colors.bg.page}`,
+                                                    background: !batch.isRead ? '#F8FAFF' : 'transparent',
+                                                    transition: 'background 0.2s',
+                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing['4'] }}>
+                                                    <StatusIcon status={batch.status === 'completed' ? 'completed' : batch.status === 'failed' ? 'failed' : 'running'} />
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing['1'] }}>
+                                                            <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.primary }}>
+                                                                Qoo10 상품 등록
+                                                            </div>
+                                                            {!isRunning && isHovered ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); removeRegistrationBatch(batch.id); }}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            ) : (
+                                                                <span style={{ fontSize: font.size.sm, color: colors.text.muted, flexShrink: 0, marginLeft: spacing['2'] }}>
+                                                                    {formatNotificationTime(batch.createdAt)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {isRunning ? (
+                                                            <>
+                                                                <div style={{ fontSize: font.size.sm, color: colors.text.tertiary, marginBottom: spacing['2'] }}>
+                                                                    등록 중... {batch.currentCount}/{batch.totalCount}건
+                                                                </div>
+                                                                <ProgressBar value={batch.currentCount} max={batch.totalCount} />
+                                                            </>
+                                                        ) : batch.status === 'completed' ? (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.success, fontWeight: 600 }}>
+                                                                {batch.totalCount}건 중 {batch.currentCount}건 등록 완료
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: font.size.sm, color: colors.danger, fontWeight: 600 }}>
+                                                                등록 실패
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )
                             )}
                         </div>
                     </div>
@@ -323,54 +492,15 @@ export const NotificationPanel: React.FC = () => {
     );
 };
 
-const StatusIcon: React.FC<{ status: 'running' | 'completed' | 'failed' }> = ({ status }) => (
-    <div style={{
-        width: '36px',
-        height: '36px',
-        borderRadius: '10px',
-        background: status === 'completed' ? '#F0FFF8' : status === 'failed' ? '#FFF1F2' : '#EFF6FF',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-    }}>
-        {status === 'completed'
-            ? <CheckCircle2 size={18} color={colors.success} />
-            : status === 'failed'
-            ? <X size={18} color={colors.danger} />
-            : <Loader2 size={18} color={colors.primary} className="spin" />
-        }
-    </div>
-);
-
-const ProgressBar: React.FC<{ value: number; max: number }> = ({ value, max }) => (
-    <div style={{ height: '4px', background: colors.bg.subtle, borderRadius: '2px', overflow: 'hidden' }}>
-        <div style={{
-            height: '100%',
-            width: `${max > 0 ? (value / max) * 100 : 0}%`,
-            background: colors.primary,
-            borderRadius: '2px',
-            transition: 'width 0.4s ease',
-        }} />
-    </div>
-);
-
-const SectionLabel: React.FC<{ label: string }> = ({ label }) => (
-    <div style={{
-        padding: `${spacing['3']} ${spacing['6']}`,
-        fontSize: font.size.xs,
-        fontWeight: 700,
-        color: colors.text.muted,
-        background: colors.bg.subtle,
-        letterSpacing: '0.02em',
-    }}>
-        {label}
-    </div>
-);
-
-const EmptyState: React.FC<{ label: string }> = ({ label }) => (
-    <div style={{ padding: '56px 24px', textAlign: 'center' }}>
-        <PackageOpen size={36} color={colors.border.default} style={{ marginBottom: '12px' }} />
-        <p style={{ fontSize: font.size.sm, color: colors.text.muted, margin: 0 }}>{label}</p>
-    </div>
-);
+// CSS 주입을 위해 수정
+const style = document.createElement('style');
+style.textContent = `
+    .notification-item .delete-btn {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .notification-item:hover .delete-btn {
+        opacity: 1;
+    }
+`;
+document.head.appendChild(style);

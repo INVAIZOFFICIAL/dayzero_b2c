@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ProductDetail } from '../../../types/editing';
-import { SOURCING_PROVIDERS } from '../../../types/sourcing';
+import { getProviderLogo } from '../../../types/sourcing';
+import { Checkbox } from '../../../components/common/Checkbox';
 import { toKoCategory, shortKoCategory, EXCHANGE_RATE } from '../../../mock/categoryMap';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
 
@@ -17,6 +18,7 @@ interface Props {
     selected: boolean;
     onToggle: () => void;
     onClick: () => void;
+    'data-job-id'?: string;
 }
 
 interface TooltipData {
@@ -25,8 +27,6 @@ interface TooltipData {
     content: React.ReactNode;
 }
 
-const getProviderLogo = (name: string) =>
-    SOURCING_PROVIDERS.find((p) => p.name === name)?.logo ?? '/logos/default.png';
 
 const stripPrefix = (title: string) => title.replace(/^\[[^\]]+\]\s*/, '');
 
@@ -71,14 +71,20 @@ const FloatingTooltip: React.FC<{ data: TooltipData }> = ({ data }) => {
     );
 };
 
-export const ProductListItem: React.FC<Props> = ({ product, selected, onToggle, onClick }) => {
+export const ProductListItem: React.FC<Props> = ({
+    product, selected, onToggle, onClick, 'data-job-id': jobId
+}) => {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+    const [imgError, setImgError] = useState(false);
 
     const needsTranslation = product.translationStatus === 'pending' || product.translationStatus === 'failed';
     const isProcessing = product.translationStatus === 'processing';
     const isTranslated = !!product.titleJa;
     const displayTitle = stripPrefix(product.titleJa ?? product.titleKo);
-    const krwEquivalent = Math.round(product.salePriceJpy * EXCHANGE_RATE);
+    const krwEquivalent = Math.round(product.salePriceJpy * 9);
+
+    // 읽지 않은 항목은 파란색 배경 표시 (isRead 가 false 이거나 undefined 일 때)
+    const isUnread = product.isRead === false;
 
     const showTooltip = (e: React.MouseEvent, content: React.ReactNode) => {
         setTooltip({ x: e.clientX, y: e.clientY, content });
@@ -87,26 +93,22 @@ export const ProductListItem: React.FC<Props> = ({ product, selected, onToggle, 
 
     return (
         <>
-            <style>{`
-                @keyframes tooltipFadeIn {
-                    from { opacity: 0; transform: translateY(4px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
-
             <div
                 onClick={onClick}
+                data-job-id={jobId}
                 style={{
                     display: 'flex', alignItems: 'center', gap: spacing['4'],
                     padding: `14px ${spacing['5']}`,
-                    background: selected ? colors.primaryLight : colors.bg.surface,
-                    border: `1px solid ${selected ? '#BFDBFE' : colors.border.default}`,
+                    background: isUnread
+                        ? (selected ? '#DBEAFE' : '#F0F9FF')
+                        : (selected ? colors.primaryLight : colors.bg.surface),
                     borderRadius: radius.lg,
                     cursor: 'pointer',
                     transition: 'background 0.15s, border-color 0.15s',
                     position: 'relative', overflow: 'hidden',
                 }}
             >
+                {/* ... shimmer and checkbox remained ... */}
                 {isProcessing && (
                     <div style={{
                         position: 'absolute', inset: 0,
@@ -117,34 +119,30 @@ export const ProductListItem: React.FC<Props> = ({ product, selected, onToggle, 
                     }} />
                 )}
 
-                {/* 체크박스 */}
-                <div
-                    onClick={(e) => { e.stopPropagation(); onToggle(); }}
-                    style={{
-                        width: '20px', height: '20px', flexShrink: 0,
-                        borderRadius: radius.xs,
-                        border: `2px solid ${selected ? colors.primary : colors.border.light}`,
-                        background: selected ? colors.primary : colors.bg.surface,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'all 0.15s',
-                    }}
-                >
-                    {selected && (
-                        <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
-                            <path d="M1 3.5L4 6.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    )}
-                </div>
+                <Checkbox checked={selected} onClick={onToggle} />
 
                 {/* 썸네일 */}
-                <img
-                    src={product.thumbnailUrl} alt=""
-                    style={{
+                {imgError || !product.thumbnailUrl ? (
+                    <div style={{
                         width: '48px', height: '48px', flexShrink: 0,
-                        borderRadius: radius.img, objectFit: 'cover',
+                        borderRadius: radius.img,
+                        background: colors.bg.subtle,
                         border: `1px solid ${colors.border.default}`,
-                    }}
-                />
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                    </div>
+                ) : (
+                    <img
+                        src={product.thumbnailUrl}
+                        alt=""
+                        onError={() => setImgError(true)}
+                        style={{
+                            width: '48px', height: '48px', flexShrink: 0,
+                            borderRadius: radius.img, objectFit: 'cover',
+                            border: `1px solid ${colors.border.default}`,
+                        }}
+                    />
+                )}
 
                 {/* 상품명 */}
                 <div

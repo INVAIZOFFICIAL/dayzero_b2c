@@ -1,1 +1,10 @@
 {"t":0,"agent":"a83a1b2","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a5b52b3","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a9e83c9","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"simplify"}
+{"t":0,"agent":"a8b138a","agent_type":"feature-dev:code-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a89db37","agent_type":"feature-dev:code-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"aff8674","agent_type":"feature-dev:code-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a8b138a","agent_type":"feature-dev:code-reviewer","event":"agent_stop","success":true,"duration_ms":46211}
+{"t":0,"agent":"aff8674","agent_type":"feature-dev:code-reviewer","event":"agent_stop","success":true,"duration_ms":33934}
+{"t":0,"agent":"a89db37","agent_type":"feature-dev:code-reviewer","event":"agent_stop","success":true,"duration_ms":45774}

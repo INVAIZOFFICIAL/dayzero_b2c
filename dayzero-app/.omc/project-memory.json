@@ -148,15 +148,45 @@
   },
   "hotPaths": [
     {
+      "path": "src/components/common/NotificationPanel.tsx",
+      "accessCount": 67,
+      "lastAccessed": 1773208391714,
+      "type": "file"
+    },
+    {
       "path": "src/pages/editing/EditingListPage.tsx",
-      "accessCount": 24,
-      "lastAccessed": 1773159983039,
+      "accessCount": 38,
+      "lastAccessed": 1773209095545,
+      "type": "file"
+    },
+    {
+      "path": "src/store/useEditingStore.ts",
+      "accessCount": 19,
+      "lastAccessed": 1773208904067,
       "type": "file"
     },
     {
       "path": "src/pages/sourcing/components/UrlSourcingContent.tsx",
-      "accessCount": 15,
-      "lastAccessed": 1773159603397,
+      "accessCount": 16,
+      "lastAccessed": 1773208189663,
+      "type": "file"
+    },
+    {
+      "path": "src/store/useSourcingStore.ts",
+      "accessCount": 11,
+      "lastAccessed": 1773208315008,
+      "type": "directory"
+    },
+    {
+      "path": "src/pages/SourcingPage.tsx",
+      "accessCount": 11,
+      "lastAccessed": 1773208843854,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/editing/components/ProductListItem.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1773208884785,
       "type": "file"
     },
     {
@@ -178,33 +208,45 @@
       "type": "file"
     },
     {
+      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773193440428,
+      "type": "file"
+    },
+    {
       "path": "src/components/onboarding/OnboardingContext.tsx",
       "accessCount": 3,
       "lastAccessed": 1773159354521,
       "type": "file"
     },
     {
-      "path": "src/pages/sourcing/AutoSourcingPage.tsx",
+      "path": "src/design/tokens.ts",
       "accessCount": 3,
-      "lastAccessed": 1773159406437,
+      "lastAccessed": 1773189433380,
+      "type": "directory"
+    },
+    {
+      "path": "src/mock/editingMock.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773207835354,
       "type": "file"
     },
     {
-      "path": "src/components/common/NotificationPanel.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773158945684,
-      "type": "file"
+      "path": "src",
+      "accessCount": 3,
+      "lastAccessed": 1773207865879,
+      "type": "directory"
+    },
+    {
+      "path": "src/types/sourcing.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773208827063,
+      "type": "directory"
     },
     {
       "path": "src/mock/authMock.ts",
       "accessCount": 2,
       "lastAccessed": 1773159344705,
-      "type": "file"
-    },
-    {
-      "path": "src/pages/editing/components/ProductListItem.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773159367434,
       "type": "file"
     },
     {
@@ -220,27 +262,45 @@
       "type": "file"
     },
     {
+      "path": "src/types/editing.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773190019131,
+      "type": "file"
+    },
+    {
       "path": "src/components/layout/MainLayout.tsx",
       "accessCount": 1,
       "lastAccessed": 1773158871160,
       "type": "file"
     },
     {
-      "path": "src/store/useSourcingStore.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773158887895,
-      "type": "directory"
-    },
-    {
-      "path": "src/types/sourcing.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773159453601,
-      "type": "directory"
-    },
-    {
       "path": "src/index.css",
       "accessCount": 1,
       "lastAccessed": 1773159962782,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1773193449499,
+      "type": "directory"
+    },
+    {
+      "path": "src/App.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773207890712,
+      "type": "file"
+    },
+    {
+      "path": "src/mock/categoryMap.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773208717568,
+      "type": "file"
+    },
+    {
+      "path": "src/components/common/Checkbox.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773208851203,
       "type": "file"
     }
   ],

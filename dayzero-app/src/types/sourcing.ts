@@ -53,7 +53,7 @@ export interface ParsedUrl {
 export const SOURCING_PROVIDERS: { name: SourcingProvider; logo: string; url: string }[] = [
     { name: '올리브영', logo: '/logos/oliveyoung.png', url: 'https://www.oliveyoung.co.kr' },
     { name: '쿠팡', logo: '/logos/coupang.png', url: 'https://www.coupang.com' },
-    { name: '네이버 스마트스토어', logo: '/logos/smartstore.png', url: 'https://smartstore.naver.com' },
+    { name: '네이버 스마트스토어', logo: '/logos/smartstore.png', url: 'https://shopping.naver.com/ns/home' },
     { name: 'G마켓', logo: '/logos/gmarket.png', url: 'https://www.gmarket.co.kr' },
     { name: '다이소', logo: '/logos/daiso.png', url: 'https://www.daisomall.co.kr' },
     { name: 'yes24', logo: '/logos/yes24.png', url: 'https://www.yes24.com' },
@@ -64,6 +64,9 @@ export const SOURCING_PROVIDERS: { name: SourcingProvider; logo: string; url: st
     { name: '위치폼', logo: '/logos/witchform.png?v=3', url: 'https://witchform.com' },
     { name: 'FANS', logo: '/logos/fans.png', url: 'https://app.fans/' },
 ];
+
+export const getProviderLogo = (name: string): string =>
+    SOURCING_PROVIDERS.find((p) => p.name === name)?.logo ?? '/logos/default.png';
 
 export const MOCK_URL_TO_PROVIDER = (url: string): SourcingProvider | null => {
     if (url.includes('oliveyoung')) return '올리브영';
