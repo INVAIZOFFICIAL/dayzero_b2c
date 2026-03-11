@@ -10,8 +10,10 @@ import type { EditTabFilter } from '../../types/editing';
 import { ProductListItem } from './components/ProductListItem';
 import { BulkActionBar } from './components/BulkActionBar';
 import { TranslationModal } from './components/TranslationModal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { Checkbox } from '../../components/common/Checkbox';
 import { colors, font, radius, spacing } from '../../design/tokens';
+import { calculateIntlShippingKrw } from '../../utils/shipping';
 
 const TAB_LABELS: { key: EditTabFilter; label: string }[] = [
     { key: 'all', label: '전체' },
@@ -70,6 +72,8 @@ export default function EditingListPage() {
         startTranslationJobs, startRegistrationBatch, markProductsRead, selectByJobId
     } = useEditingStore();
 
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
     useEffect(() => {
         return () => {
             markProductsRead();
@@ -111,7 +115,8 @@ export default function EditingListPage() {
         const updates: { id: string, updates: Partial<any> }[] = [];
 
         products.forEach(p => {
-            const costKrw = p.originalPriceKrw + onboardingState.domesticShipping + onboardingState.prepCost + onboardingState.intlShipping;
+            const intlShippingFromWeight = calculateIntlShippingKrw(p.weightKg);
+            const costKrw = p.originalPriceKrw + onboardingState.domesticShipping + onboardingState.prepCost + intlShippingFromWeight;
             const margin = onboardingState.marginType === '%' ? costKrw * (onboardingState.marginValue / 100) : onboardingState.marginValue;
             const salePriceKrw = costKrw + margin;
             const expectedJpy = Math.round(salePriceKrw * 0.11);
@@ -126,6 +131,25 @@ export default function EditingListPage() {
             updates.forEach(u => updateProduct(u.id, u.updates));
         }
     }, [products.length, onboardingState, updateProduct]);
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).updateProductWeight = (id: string, weightKg: number) => {
+            updateProduct(id, { weightKg, isWeightEstimated: false });
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).predictProductWeight = (id: string) => {
+            // 무게 예측 시뮬레이션: 0.2kg ~ 0.8kg 사이의 랜덤 값 생성
+            const predicted = parseFloat((Math.random() * 0.6 + 0.2).toFixed(2));
+            updateProduct(id, { weightKg: predicted, isWeightEstimated: true });
+        };
+        return () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            delete (window as any).updateProductWeight;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            delete (window as any).predictProductWeight;
+        };
+    }, [updateProduct]);
 
     // 탭별 건수 (providerFilter 무관하게 계산)
     const counts = useMemo(() => ({
@@ -317,14 +341,15 @@ export default function EditingListPage() {
 
             {/* 컬럼 헤더 (전체 선택 체크박스 포함) */}
             <div style={{
-                display: 'flex', alignItems: 'center', gap: spacing['4'],
+                display: 'flex', alignItems: 'center', gap: spacing['5'],
                 padding: `0 ${spacing['5']}`, marginBottom: spacing['2'],
             }}>
                 <Checkbox checked={allFilteredSelected} onClick={handleSelectAll} />
                 <div style={{ width: '48px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>이미지</div>
                 <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 3 }} />
-                <div style={{ flex: 2, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
-                <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '90px', flexShrink: 0 }} />
+                <div style={{ flex: 1.2, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
+                <div style={{ width: '100px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600, paddingLeft: '4px' }}>무게</div>
+                <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '100px', flexShrink: 0 }} />
                 <div style={{ width: '90px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>원가</div>
                 <SortHeader label="등록일" sortKey="createdAt" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '72px', flexShrink: 0 }} />
             </div>
@@ -360,8 +385,21 @@ export default function EditingListPage() {
                         clearSelection();
                     }
                 }}
-                onDelete={() => deleteProducts(selectedProductIds)}
+                onDelete={() => setIsDeleteModalOpen(true)}
                 onClear={clearSelection}
+            />
+
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={() => {
+                    deleteProducts(selectedProductIds);
+                    clearSelection();
+                }}
+                title={`선택한 ${selectedProductIds.length}개의 상품을 삭제할까요?`}
+                description="삭제된 상품 정보는 복구할 수 없으며, 수집된 모든 데이터가 영구적으로 삭제됩니다."
+                confirmText="삭제하기"
+                cancelText="취소"
             />
 
             <TranslationModal

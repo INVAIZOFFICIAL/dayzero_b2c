@@ -165,6 +165,13 @@ export const UrlSourcingContent = () => {
                     catPath = '생활용품 > 세제/세정 > 주방세제';
                 }
 
+                // 무게 시뮬레이션 (수집된 무게 vs AI 예측 무게)
+                const isAlbum = realTitle.includes('Album') || realTitle.includes('음반');
+
+                // 80% 확률로 실제 무게 수집 성공, 20% 확률로 AI 예측 필요 시뮬레이션
+                const isAIPredicted = Math.random() < 0.2;
+                const weightKg = isAlbum ? 0.45 : 0.25;
+
                 useEditingStore.getState().addProduct({
                     id: mockProduct.id,
                     titleKo: mockProduct.title,
@@ -186,6 +193,8 @@ export const UrlSourcingContent = () => {
                     createdAt: new Date().toISOString(),
                     isRead: false,
                     jobId: mockProduct.jobId,
+                    weightKg: weightKg,
+                    isWeightEstimated: isAIPredicted,
                 });
 
                 addProduct(mockProduct);

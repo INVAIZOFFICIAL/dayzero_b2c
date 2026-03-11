@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSourcingStore } from '../store/useSourcingStore';
 import { MainLayout } from '../components/layout/MainLayout';
-import { SOURCING_PROVIDERS, getProviderLogo } from '../types/sourcing';
+import { getProviderLogo } from '../types/sourcing';
 import { Link2, Zap, Clock, LayoutGrid, Package, Check, Trash2, GripVertical } from 'lucide-react';
 import { UrlSourcingContent } from './sourcing/components/UrlSourcingContent';
 import { colors } from '../design/tokens';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 
 const formatLastRun = (dateString?: string) => {
     if (!dateString) return '아직 실행되지 않음';
@@ -27,6 +28,10 @@ export default function SourcingPage() {
     const [activeTab, setActiveTab] = useState<'auto' | 'url'>('auto');
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; scheduleId: string | null }>({
+        isOpen: false,
+        scheduleId: null
+    });
 
 
     const handleDrop = (targetId: string) => {
@@ -102,9 +107,11 @@ export default function SourcingPage() {
             <div style={{ marginBottom: '48px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, color: colors.text.primary }}>등록된 자동 수집 목록</h2>
-                    <button onClick={() => navigate('/sourcing/auto')} style={{ background: 'none', color: colors.primary, border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        + 자동 수집 추가
-                    </button>
+                    {schedules.length > 0 && (
+                        <button onClick={() => navigate('/sourcing/auto')} style={{ background: 'none', color: colors.primary, border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            + 자동 수집 추가
+                        </button>
+                    )}
                 </div>
 
                 {schedules.length > 0 && (
@@ -163,14 +170,55 @@ export default function SourcingPage() {
                 {schedules.length === 0 ? (
                     <div style={{
                         background: colors.bg.surface,
-                        borderRadius: '16px',
-                        border: `1px dashed ${colors.border.light}`,
-                        padding: '40px',
-                        textAlign: 'center'
+                        borderRadius: '24px',
+                        border: `1px solid ${colors.border.default}`,
+                        padding: '60px 40px',
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
                     }}>
-                        <div style={{ fontSize: '15px', color: colors.text.tertiary, marginBottom: '16px' }}>등록된 자동 수집이 없어요.</div>
-                        <button onClick={() => navigate('/sourcing/auto')} className="btn-google" style={{ maxWidth: '200px', margin: '0 auto', height: '40px' }}>
-                            자동 수집 추가
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '20px',
+                            background: colors.bg.subtle,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '20px',
+                            color: colors.primary
+                        }}>
+                            <Zap size={32} fill={colors.primary} />
+                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: colors.text.primary, marginBottom: '8px' }}>
+                            아직 등록된 자동 수집이 없어요
+                        </h3>
+                        <p style={{ fontSize: '15px', color: colors.text.tertiary, marginBottom: '32px', lineHeight: '1.5' }}>
+                            매일 아침 바쁜 당신을 위해,<br />
+                            AI가 알아서 상품을 찾아오는 자동 수집을 시작해보세요.
+                        </p>
+                        <button
+                            onClick={() => navigate('/sourcing/auto')}
+                            className="btn-primary"
+                            style={{
+                                width: '200px',
+                                height: '52px',
+                                borderRadius: '12px',
+                                background: colors.primary,
+                                color: 'white',
+                                fontSize: '16px',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                        >
+                            자동 수집 추가하기
                         </button>
                     </div>
                 ) : filteredSchedules.length === 0 ? (
@@ -241,7 +289,10 @@ export default function SourcingPage() {
 
                                     {/* Delete Button — hover only */}
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); deleteSchedule(schedule.id); }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteModal({ isOpen: true, scheduleId: schedule.id });
+                                        }}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: colors.text.muted, flexShrink: 0, borderRadius: '6px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.15s, color 0.15s', pointerEvents: isHovered ? 'auto' : 'none' }}
                                         onMouseEnter={(e) => (e.currentTarget.style.color = colors.danger)}
                                         onMouseLeave={(e) => (e.currentTarget.style.color = colors.text.muted)}
@@ -298,6 +349,20 @@ export default function SourcingPage() {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, scheduleId: null })}
+                onConfirm={() => {
+                    if (deleteModal.scheduleId) {
+                        deleteSchedule(deleteModal.scheduleId);
+                    }
+                }}
+                title="자동 수집을 삭제할까요?"
+                description="삭제된 설정은 복구할 수 없으며, 더 이상 매일 자동으로 상품을 수집하지 않게 됩니다."
+                confirmText="삭제하기"
+                cancelText="취소"
+            />
         </MainLayout>
     );
 }

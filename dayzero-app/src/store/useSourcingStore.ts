@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { SourcingJob, AutoSchedule, SourcedProduct, ParsedUrl } from '../types/sourcing';
 
 export interface CollectionNotification {
@@ -56,100 +57,116 @@ interface SourcingState {
     removeFlyingBall: (id: number) => void;
 }
 
-export const useSourcingStore = create<SourcingState>((set) => ({
-    jobs: [],
-    schedules: [],
-    unprocessedProductCount: 0,
-    products: [],
-    notifications: [
-        { id: 'n-2', type: 'url', title: '쿠팡 URL 수집', status: 'completed', currentCount: 8, totalCount: 8, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), isRead: false },
-        { id: 'n-3', type: 'auto', title: '다이소 자동 수집', status: 'completed', currentCount: 15, totalCount: 15, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), isRead: false },
-    ],
-    unreadCount: 2,
-    particleOrigin: null,
-    flyingBalls: [],
-    selectedAutoFilter: '전체',
-    urlSourcing: {
-        urls: [],
-        parsedUrls: [],
-        isCollecting: false,
-        collectionStarted: false,
-        hasFailedOnce: false,
-    },
+export const useSourcingStore = create<SourcingState>()(
+    persist(
+        (set) => ({
+            jobs: [],
+            schedules: [],
+            unprocessedProductCount: 0,
+            products: [],
+            notifications: [
+                { id: 'n-2', type: 'url', title: '쿠팡 URL 수집', status: 'completed', currentCount: 8, totalCount: 8, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), isRead: false },
+                { id: 'n-3', type: 'auto', title: '다이소 자동 수집', status: 'completed', currentCount: 15, totalCount: 15, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), isRead: false },
+            ],
+            unreadCount: 2,
+            particleOrigin: null,
+            flyingBalls: [],
+            selectedAutoFilter: '전체',
+            urlSourcing: {
+                urls: [],
+                parsedUrls: [],
+                isCollecting: false,
+                collectionStarted: false,
+                hasFailedOnce: false,
+            },
 
-    setUrlSourcing: (updates) => set((state) => ({
-        urlSourcing: { ...state.urlSourcing, ...updates }
-    })),
+            setUrlSourcing: (updates) => set((state) => ({
+                urlSourcing: { ...state.urlSourcing, ...updates }
+            })),
 
-    setSelectedAutoFilter: (filter) => set({ selectedAutoFilter: filter }),
+            setSelectedAutoFilter: (filter) => set({ selectedAutoFilter: filter }),
 
-    addJob: (job) => set((state) => ({ jobs: [job, ...state.jobs] })),
+            addJob: (job) => set((state) => ({ jobs: [job, ...state.jobs] })),
 
-    updateJob: (id, updates) => set((state) => ({
-        jobs: state.jobs.map((job) => job.id === id ? { ...job, ...updates } : job)
-    })),
+            updateJob: (id, updates) => set((state) => ({
+                jobs: state.jobs.map((job) => job.id === id ? { ...job, ...updates } : job)
+            })),
 
-    addSchedule: (schedule) => set((state) => ({ schedules: [...state.schedules, schedule] })),
+            addSchedule: (schedule) => set((state) => ({ schedules: [...state.schedules, schedule] })),
 
-    updateSchedule: (id, updates) => set((state) => ({
-        schedules: state.schedules.map((s) => s.id === id ? { ...s, ...updates } : s)
-    })),
+            updateSchedule: (id, updates) => set((state) => ({
+                schedules: state.schedules.map((s) => s.id === id ? { ...s, ...updates } : s)
+            })),
 
-    deleteSchedule: (id) => set((state) => ({
-        schedules: state.schedules.filter((s) => s.id !== id),
-    })),
+            deleteSchedule: (id) => set((state) => ({
+                schedules: state.schedules.filter((s) => s.id !== id),
+            })),
 
-    reorderSchedules: (schedules) => set({ schedules }),
+            reorderSchedules: (schedules) => set({ schedules }),
 
-    toggleSchedule: (id) => set((state) => ({
-        schedules: state.schedules.map((s) => s.id === id ? { ...s, isActive: !s.isActive } : s)
-    })),
+            toggleSchedule: (id) => set((state) => ({
+                schedules: state.schedules.map((s) => s.id === id ? { ...s, isActive: !s.isActive } : s)
+            })),
 
-    setUnprocessedCount: (count) => set({ unprocessedProductCount: count }),
+            setUnprocessedCount: (count) => set({ unprocessedProductCount: count }),
 
-    clearUnprocessedCount: () => set({ unprocessedProductCount: 0 }),
+            clearUnprocessedCount: () => set({ unprocessedProductCount: 0 }),
 
-    addProduct: (product) => set((state) => ({
-        products: [product, ...state.products],
-        unprocessedProductCount: state.unprocessedProductCount + 1
-    })),
+            addProduct: (product) => set((state) => ({
+                products: [product, ...state.products],
+                unprocessedProductCount: state.unprocessedProductCount + 1
+            })),
 
-    addNotification: (notification) => set((state) => ({
-        notifications: [notification, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
-    })),
+            addNotification: (notification) => set((state) => ({
+                notifications: [notification, ...state.notifications],
+                unreadCount: state.unreadCount + 1,
+            })),
 
-    updateNotification: (id, updates) => set((state) => ({
-        notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, ...updates } : n
-        ),
-    })),
+            updateNotification: (id, updates) => set((state) => ({
+                notifications: state.notifications.map((n) =>
+                    n.id === id ? { ...n, ...updates } : n
+                ),
+            })),
 
-    removeNotification: (id) => set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== id),
-    })),
+            removeNotification: (id) => set((state) => ({
+                notifications: state.notifications.filter((n) => n.id !== id),
+            })),
 
-    markNotificationRead: (id) => set((state) => {
-        const notif = state.notifications.find((n) => n.id === id);
-        if (!notif || notif.isRead) return state;
-        return {
-            notifications: state.notifications.map((n) => n.id === id ? { ...n, isRead: true } : n),
-            unreadCount: Math.max(0, state.unreadCount - 1),
-        };
-    }),
+            markNotificationRead: (id) => set((state) => {
+                const notif = state.notifications.find((n) => n.id === id);
+                if (!notif || notif.isRead) return state;
+                return {
+                    notifications: state.notifications.map((n) => n.id === id ? { ...n, isRead: true } : n),
+                    unreadCount: Math.max(0, state.unreadCount - 1),
+                };
+            }),
 
-    markAllRead: () => set((state) => ({
-        notifications: state.notifications.map(n => ({ ...n, isRead: true })),
-        unreadCount: 0
-    })),
+            markAllRead: () => set((state) => ({
+                notifications: state.notifications.map(n => ({ ...n, isRead: true })),
+                unreadCount: 0
+            })),
 
-    triggerParticle: (origin) => set({ particleOrigin: origin }),
+            triggerParticle: (origin) => set({ particleOrigin: origin }),
 
-    triggerFlyingBall: (origin) => set((state) => ({
-        flyingBalls: [...state.flyingBalls, { id: Date.now(), originX: origin.x, originY: origin.y }],
-    })),
+            triggerFlyingBall: (origin) => set((state) => ({
+                flyingBalls: [...state.flyingBalls, { id: Date.now(), originX: origin.x, originY: origin.y }],
+            })),
 
-    removeFlyingBall: (id) => set((state) => ({
-        flyingBalls: state.flyingBalls.filter((b) => b.id !== id),
-    })),
-}));
+            removeFlyingBall: (id) => set((state) => ({
+                flyingBalls: state.flyingBalls.filter((b) => b.id !== id),
+            })),
+        }),
+        {
+            name: 'dayzero-sourcing-storage',
+            partialize: (state) => ({
+                jobs: state.jobs,
+                schedules: state.schedules,
+                unprocessedProductCount: state.unprocessedProductCount,
+                products: state.products,
+                notifications: state.notifications,
+                unreadCount: state.unreadCount,
+                urlSourcing: state.urlSourcing,
+            }),
+        }
+    )
+);

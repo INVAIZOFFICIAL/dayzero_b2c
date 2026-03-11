@@ -4,8 +4,9 @@ import { ArrowRight, ChevronDown, ChevronRight, Calculator, Package, Truck, Glob
 import OnboardingLayout from '../../components/onboarding/OnboardingLayout';
 import { useOnboarding } from '../../components/onboarding/OnboardingContext';
 
-const EXCHANGE_RATE = 9.2;
 const PLATFORM_FEE_RATE = 0.12;
+const DAILY_EXCHANGE_RATE = 9.2;
+const RATE_BASE_TIME = '09:00';
 
 const inputStyles = {
     width: '100%',
@@ -94,10 +95,12 @@ export default function BasicMarginPage() {
     const [showCalculation, setShowCalculation] = useState(false);
     const [simBaseCost, setSimBaseCost] = useState(15000);
 
+    const exchangeRate = DAILY_EXCHANGE_RATE;
+
     const { marginAmount, totalKrw, convertedJpy, finalPriceJpy, payoutJpy, payoutKrw } = useMemo(() => {
         const margin = marginType === '%' ? Math.round(simBaseCost * (marginValue / 100)) : marginValue;
         const krw = simBaseCost + margin + domesticShipping + prepCost;
-        const jpyAmount = Math.round(krw / EXCHANGE_RATE);
+        const jpyAmount = Math.round(krw / exchangeRate);
         const finalJpy = jpyAmount + intlShipping;
         const fee = Math.round(finalJpy * PLATFORM_FEE_RATE);
         const payoutJpyVal = finalJpy - fee;
@@ -107,14 +110,14 @@ export default function BasicMarginPage() {
             convertedJpy: jpyAmount,
             finalPriceJpy: finalJpy,
             payoutJpy: payoutJpyVal,
-            payoutKrw: Math.round(payoutJpyVal * EXCHANGE_RATE),
+            payoutKrw: Math.round(payoutJpyVal * exchangeRate),
         };
-    }, [marginType, marginValue, domesticShipping, prepCost, intlShipping, simBaseCost]);
+    }, [marginType, marginValue, domesticShipping, prepCost, intlShipping, simBaseCost, exchangeRate]);
 
     const calcRows = [
         { icon: <Package size={14} />, label: `₩${simBaseCost.toLocaleString()} + 마진 ${marginValue}%`, value: `₩${Math.round(simBaseCost + marginAmount).toLocaleString()}`, highlight: false },
         { icon: <Truck size={14} />, label: '국내배송비/작업비 합계', value: `₩${totalKrw.toLocaleString()}`, highlight: false },
-        { icon: <RefreshCw size={14} />, label: `엔화 환전 (₩${EXCHANGE_RATE}:¥1)`, value: `¥${convertedJpy.toLocaleString()}`, highlight: false },
+        { icon: <RefreshCw size={14} />, label: `엔화 환전 (₩${exchangeRate}:¥1)`, value: `¥${convertedJpy.toLocaleString()}`, highlight: false },
         { icon: <Globe size={14} />, label: '해외 배송비 합산', value: `¥${finalPriceJpy.toLocaleString()}`, highlight: true },
     ];
 
@@ -252,6 +255,26 @@ export default function BasicMarginPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Calculator size={16} color="#3182F6" />
                                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#191F28' }}>가격 시뮬레이션</div>
+                                </div>
+
+                                {/* 오늘의 환율 */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    background: '#EBF4FF', borderRadius: '10px', padding: '9px 12px',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{
+                                            fontSize: '10px', fontWeight: 700, color: '#3182F6',
+                                            background: '#fff', borderRadius: '4px', padding: '2px 6px',
+                                            border: '1px solid #BFDBFE', letterSpacing: '0.2px',
+                                        }}>오늘 환율</span>
+                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#191F28' }}>
+                                            ¥1 = ₩{exchangeRate.toFixed(1)}
+                                        </span>
+                                    </div>
+                                    <span style={{ fontSize: '11px', color: '#8B95A1' }}>
+                                        {RATE_BASE_TIME} 기준
+                                    </span>
                                 </div>
 
                                 {/* 원가 입력 */}

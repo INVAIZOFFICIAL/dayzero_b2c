@@ -48,6 +48,8 @@ export interface ProductDetail {
     createdAt: string; // 수집 등록일 (ISO string)
     isRead: boolean;
     jobId?: string; // 소싱 작업 고유 ID (알림 연동용)
+    weightKg: number;
+    isWeightEstimated: boolean;
 }
 
 export interface TranslationJob {

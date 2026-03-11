@@ -55,6 +55,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-2',
@@ -75,6 +78,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-3',
@@ -95,6 +101,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-4',
@@ -115,6 +124,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-5',
@@ -135,6 +147,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 11).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-6',
@@ -155,6 +170,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-7',
@@ -175,6 +193,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 13).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     {
         id: 'prod-8',
@@ -195,6 +216,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'completed',
         lastSavedAt: null,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     },
     // 번역 완료 but 편집 미완료 (5건)
     ...([
@@ -222,6 +246,9 @@ const translatedProducts: ProductDetail[] = [
         editStatus: 'pending' as const,
         lastSavedAt: null,
         createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+        isRead: true,
+        weightKg: 0.5,
+        isWeightEstimated: true,
     })),
 ];
 
@@ -285,6 +312,9 @@ const pendingProducts: ProductDetail[] = pendingProductsData.map((p) => ({
     editStatus: 'pending' as const,
     lastSavedAt: null,
     createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+    isRead: true,
+    weightKg: 0.5,
+    isWeightEstimated: true,
 }));
 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
@@ -294,7 +324,7 @@ const COUPANG_NEW_IDS = new Set(['prod-14','prod-15','prod-16','prod-17','prod-1
 
 // 번역 완료(13건): 7~19일 전 수집 / 번역 필요(35건): 1~6일 전 수집
 export const MOCK_PRODUCTS: ProductDetail[] = [
-    ...translatedProducts.map((p, i) => ({ ...p, createdAt: daysAgo(7 + i), isRead: true })),
+    ...translatedProducts.map((p, i) => ({ ...p, createdAt: daysAgo(7 + i) })),
     ...pendingProducts.map((p, i) => {
         const isCoupangNew = COUPANG_NEW_IDS.has(p.id);
         const isDaisoNew = p.provider === '다이소';

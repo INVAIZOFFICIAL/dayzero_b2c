@@ -47,5 +47,12 @@ export const toKoCategory = (jaPath: string): string =>
 
 export const shortKoCategory = (jaPath: string): string => {
     const ko = toKoCategory(jaPath);
-    return ko.split('>').pop()?.trim() ?? ko;
+    const parts = ko.split('>').map(p => p.trim());
+
+    if (parts.length <= 3) {
+        return ko;
+    }
+
+    // 4단계 이상이면 가운데를 축약 (Depth 1 > ... > Last)
+    return `${parts[0]} > ... > ${parts[parts.length - 1]}`;
 };
