@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { colors, font, radius, spacing, shadow, zIndex } from '../../../design/tokens';
-import { getProviderLogo } from '../../../types/sourcing';
+import { getProviderLogo, SOURCING_PROVIDERS } from '../../../types/sourcing';
 import type { ProductDetail } from '../../../types/editing';
+import { stripPrefix } from '../../../utils/editing';
 
 interface Props {
     product: ProductDetail;
@@ -14,21 +15,18 @@ interface Props {
     onRegister: () => void;
 }
 
-const stripPrefix = (title: string) => title.replace(/^\[[^\]]+\]\s*/, '');
-
-const PROVIDER_URLS: Record<string, string> = {
-    '올리브영': 'https://www.oliveyoung.co.kr',
-    '쿠팡': 'https://www.coupang.com',
-    '다이소': 'https://www.daiso-sangpoom.com',
-};
 
 export const EditingHeader: React.FC<Props> = ({
     product, hasPrev, hasNext, onBack, onPrev, onNext, onRegister,
 }) => {
     const [showRegTooltip, setShowRegTooltip] = useState(false);
 
-    const isTranslated = !!product.titleJa;
-    const providerUrl = PROVIDER_URLS[product.provider] ?? 'https://www.coupang.com';
+    const isTranslated =
+        product.translationStatus === 'completed' &&
+        !!product.titleJa &&
+        !!product.descriptionJa &&
+        product.options.length > 0 && product.options.every(o => !!o.nameJa);
+    const providerUrl = product.sourceUrl || SOURCING_PROVIDERS.find(p => p.name === product.provider)?.url || 'https://www.coupang.com';
 
     return (
         <div style={{
@@ -179,7 +177,7 @@ export const EditingHeader: React.FC<Props> = ({
                         {showRegTooltip && (
                             <div style={{
                                 position: 'absolute',
-                                bottom: 'calc(100% + 8px)',
+                                top: 'calc(100% + 8px)',
                                 right: 0,
                                 background: colors.text.primary,
                                 color: '#fff',
@@ -190,13 +188,14 @@ export const EditingHeader: React.FC<Props> = ({
                                 zIndex: zIndex.dropdown,
                                 pointerEvents: 'none',
                                 boxShadow: shadow.md,
+                                animation: 'tooltipFadeIn 0.15s ease',
                             }}>
-                                번역을 먼저 완료해주세요
+                                편집을 먼저 완료해주세요
                                 <div style={{
                                     position: 'absolute',
-                                    top: '100%', right: '16px',
+                                    bottom: '100%', right: '16px',
                                     border: '5px solid transparent',
-                                    borderTopColor: colors.text.primary,
+                                    borderBottomColor: colors.text.primary,
                                 }} />
                             </div>
                         )}

@@ -1,12 +1,54 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, useRef, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronDown, ChevronRight, Calculator, Package, Truck, Globe, RefreshCw } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronRight, Calculator, Package, Truck, Globe, RefreshCw, Weight } from 'lucide-react';
 import OnboardingLayout from '../../components/onboarding/OnboardingLayout';
-import { useOnboarding } from '../../components/onboarding/OnboardingContext';
+import { useOnboarding, type ForwarderValue } from '../../components/onboarding/OnboardingContext';
 
 const PLATFORM_FEE_RATE = 0.12;
 const DAILY_EXCHANGE_RATE = 9.2;
 const RATE_BASE_TIME = '09:00';
+
+/* ── 배송대행사별 요율표 (무게 kg → 배송비 ¥) ── */
+interface RateRow { maxKg: number; fee: number }
+
+const FORWARDER_RATES: Record<string, { label: string; rows: RateRow[] }> = {
+    kse: {
+        label: 'KSE 국제로지스틱',
+        rows: [
+            { maxKg: 0.10, fee: 490 }, { maxKg: 0.25, fee: 560 }, { maxKg: 0.50, fee: 620 },
+            { maxKg: 0.75, fee: 700 }, { maxKg: 1.00, fee: 750 }, { maxKg: 1.25, fee: 780 },
+            { maxKg: 1.50, fee: 830 }, { maxKg: 1.75, fee: 880 }, { maxKg: 2.00, fee: 940 },
+            { maxKg: 2.50, fee: 1090 },
+        ],
+    },
+    qx: {
+        label: '큐익스프레스',
+        rows: [
+            { maxKg: 0.10, fee: 433 }, { maxKg: 0.25, fee: 537 }, { maxKg: 0.50, fee: 622 },
+            { maxKg: 0.75, fee: 750 }, { maxKg: 1.00, fee: 881 }, { maxKg: 1.25, fee: 975 },
+            { maxKg: 1.50, fee: 1071 }, { maxKg: 1.75, fee: 1130 }, { maxKg: 2.00, fee: 1191 },
+            { maxKg: 2.50, fee: 1245 },
+        ],
+    },
+    rincos: {
+        label: '링코스',
+        rows: [
+            { maxKg: 0.10, fee: 450 }, { maxKg: 0.25, fee: 545 }, { maxKg: 0.50, fee: 615 },
+            { maxKg: 0.75, fee: 690 }, { maxKg: 1.00, fee: 810 }, { maxKg: 1.25, fee: 860 },
+            { maxKg: 1.50, fee: 920 }, { maxKg: 1.75, fee: 970 }, { maxKg: 2.00, fee: 1050 },
+            { maxKg: 2.50, fee: 1180 },
+        ],
+    },
+};
+
+function lookupShippingFee(forwarder: ForwarderValue, weightKg: number): number {
+    const table = FORWARDER_RATES[forwarder];
+    if (!table) return 0;
+    for (const row of table.rows) {
+        if (weightKg <= row.maxKg) return row.fee;
+    }
+    return table.rows[table.rows.length - 1].fee;
+}
 
 const inputStyles = {
     width: '100%',
@@ -41,6 +83,75 @@ const cardStyles = {
     gap: '20px',
 };
 
+const WEIGHT_OPTIONS = [0.1, 0.25, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5];
+
+function WeightDropdown({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    return (
+        <div style={{ width: '120px', flexShrink: 0 }} ref={ref}>
+            <label style={{ ...labelStyles, fontSize: '13px', color: '#6B7684', marginBottom: '6px' }}>무게 (kg)</label>
+            <div style={{ position: 'relative' }}>
+                <div
+                    onClick={() => setOpen(!open)}
+                    style={{
+                        ...inputStyles,
+                        padding: '12px 14px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        border: open ? '1.5px solid #3182F6' : '1.5px solid #E5E8EB',
+                        boxShadow: open ? '0 0 0 3px rgba(49, 130, 246, 0.1)' : 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', userSelect: 'none',
+                    }}
+                >
+                    <span>{value}kg</span>
+                    <ChevronDown
+                        size={14}
+                        color={open ? '#3182F6' : '#8B95A1'}
+                        style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                    />
+                </div>
+                {open && (
+                    <div style={{
+                        position: 'absolute', top: 'calc(100% + 4px)', left: 0, width: '100%',
+                        background: '#FFFFFF', border: '1px solid #E5E8EB', borderRadius: '10px',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)', overflow: 'hidden', zIndex: 10,
+                        maxHeight: '200px', overflowY: 'auto',
+                    }}>
+                        {WEIGHT_OPTIONS.map(w => (
+                            <div
+                                key={w}
+                                onClick={() => { onChange(w); setOpen(false); }}
+                                style={{
+                                    padding: '10px 14px', fontSize: '14px', cursor: 'pointer',
+                                    transition: 'background 0.15s',
+                                    background: value === w ? '#F2F8FF' : '#fff',
+                                    color: value === w ? '#3182F6' : '#191F28',
+                                    fontWeight: value === w ? 600 : 400,
+                                }}
+                                onMouseEnter={e => { if (value !== w) e.currentTarget.style.background = '#F9FAFB'; }}
+                                onMouseLeave={e => { if (value !== w) e.currentTarget.style.background = '#fff'; }}
+                            >
+                                {w}kg
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 interface CostFieldProps {
     label: string;
     labelSub?: string;
@@ -49,14 +160,39 @@ interface CostFieldProps {
     hint: string;
     prefix?: string;
     highlighted?: boolean;
+    infoTip?: ReactNode;
 }
 
-function CostField({ label, labelSub, value, onChange, hint, prefix = '₩', highlighted = false }: CostFieldProps) {
+function CostField({ label, labelSub, value, onChange, hint, prefix = '₩', highlighted = false, infoTip }: CostFieldProps) {
+    const [showTip, setShowTip] = useState(false);
     return (
         <div>
             <label style={labelStyles}>
                 {label}
                 {labelSub && <span style={{ fontWeight: 400, color: '#8B95A1' }}>{labelSub}</span>}
+                {infoTip && (
+                    <span
+                        style={{ position: 'relative', display: 'inline-block', marginLeft: '6px', cursor: 'pointer', verticalAlign: 'middle' }}
+                        onMouseEnter={() => setShowTip(true)}
+                        onMouseLeave={() => setShowTip(false)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ display: 'block' }}>
+                            <circle cx="8" cy="8" r="7.5" stroke="#B0B8C1" />
+                            <text x="8" y="12" textAnchor="middle" fill="#8B95A1" fontSize="10" fontFamily="Pretendard, sans-serif" fontWeight="600">i</text>
+                        </svg>
+                        {showTip && (
+                            <div style={{
+                                position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                                background: '#191F28', color: '#fff', borderRadius: '10px', padding: '12px 14px',
+                                fontSize: '12px', lineHeight: 1.7, whiteSpace: 'nowrap', zIndex: 100,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                            }}>
+                                {infoTip}
+                                <div style={{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #191F28' }} />
+                            </div>
+                        )}
+                    </span>
+                )}
             </label>
             <div style={{ position: 'relative' }}>
                 <input
@@ -86,22 +222,31 @@ export default function BasicMarginPage() {
     const navigate = useNavigate();
     const { state, setState } = useOnboarding();
 
-    const { marginType, marginValue, domesticShipping, prepCost, intlShipping } = state;
+    const { marginType, marginValue, prepCost, intlShipping, forwarder } = state;
     const updateState = (updates: Partial<typeof state>) => setState(prev => ({ ...prev, ...updates }));
+
+    const hasForwarderRate = forwarder !== '' && forwarder !== 'other';
+    const forwarderLabel = hasForwarderRate ? FORWARDER_RATES[forwarder]?.label ?? '' : '';
 
     const [showFeeTable, setShowFeeTable] = useState(false);
     const [showMarginTip, setShowMarginTip] = useState(false);
     const [showComplete, setShowComplete] = useState(false);
     const [showCalculation, setShowCalculation] = useState(false);
+    const [showRateTable, setShowRateTable] = useState(false);
     const [simBaseCost, setSimBaseCost] = useState(15000);
+    const [simWeight, setSimWeight] = useState(0.3);
 
     const exchangeRate = DAILY_EXCHANGE_RATE;
 
+    const shippingJpy = hasForwarderRate
+        ? lookupShippingFee(forwarder, simWeight)
+        : intlShipping;
+
     const { marginAmount, totalKrw, convertedJpy, finalPriceJpy, payoutJpy, payoutKrw } = useMemo(() => {
         const margin = marginType === '%' ? Math.round(simBaseCost * (marginValue / 100)) : marginValue;
-        const krw = simBaseCost + margin + domesticShipping + prepCost;
+        const krw = simBaseCost + margin + prepCost;
         const jpyAmount = Math.round(krw / exchangeRate);
-        const finalJpy = jpyAmount + intlShipping;
+        const finalJpy = jpyAmount + shippingJpy;
         const fee = Math.round(finalJpy * PLATFORM_FEE_RATE);
         const payoutJpyVal = finalJpy - fee;
         return {
@@ -112,13 +257,13 @@ export default function BasicMarginPage() {
             payoutJpy: payoutJpyVal,
             payoutKrw: Math.round(payoutJpyVal * exchangeRate),
         };
-    }, [marginType, marginValue, domesticShipping, prepCost, intlShipping, simBaseCost, exchangeRate]);
+    }, [marginType, marginValue, prepCost, shippingJpy, simBaseCost, exchangeRate]);
 
     const calcRows = [
         { icon: <Package size={14} />, label: `₩${simBaseCost.toLocaleString()} + 마진 ${marginValue}%`, value: `₩${Math.round(simBaseCost + marginAmount).toLocaleString()}`, highlight: false },
-        { icon: <Truck size={14} />, label: '국내배송비/작업비 합계', value: `₩${totalKrw.toLocaleString()}`, highlight: false },
+        { icon: <Truck size={14} />, label: '작업비 합산', value: `₩${totalKrw.toLocaleString()}`, highlight: false },
         { icon: <RefreshCw size={14} />, label: `엔화 환전 (₩${exchangeRate}:¥1)`, value: `¥${convertedJpy.toLocaleString()}`, highlight: false },
-        { icon: <Globe size={14} />, label: '해외 배송비 합산', value: `¥${finalPriceJpy.toLocaleString()}`, highlight: true },
+        { icon: <Globe size={14} />, label: `해외 배송비 ¥${shippingJpy.toLocaleString()} 합산`, value: `¥${finalPriceJpy.toLocaleString()}`, highlight: true },
     ];
 
     return (
@@ -188,28 +333,127 @@ export default function BasicMarginPage() {
                                 <div style={{ fontSize: '17px', fontWeight: 700, color: '#191F28' }}>비용 설정</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     <CostField
-                                        label="국내 배송비"
-                                        labelSub=" (소싱처 → 집하센터)"
-                                        value={domesticShipping}
-                                        onChange={v => updateState({ domesticShipping: v })}
-                                        hint="무료배송 상품이 대부분이라면 0원으로 두세요."
-                                    />
-                                    <CostField
                                         label="작업비"
-                                        labelSub=" (포장/검수 등)"
                                         value={prepCost}
                                         onChange={v => updateState({ prepCost: v })}
-                                        hint="배송대행사에 납부하는 검수·포장 수수료입니다."
+                                        hint="배송대행사의 포장·검수 수수료입니다."
+                                        infoTip={
+                                            <>
+                                                <div style={{ fontWeight: 700, marginBottom: '6px', color: '#fff' }}>작업비란?</div>
+                                                <div>배송대행사에서 상품을 포장·검수할 때</div>
+                                                <div>발생하는 수수료입니다.</div>
+                                                <div style={{ marginTop: '6px' }}>
+                                                    <span style={{ color: '#60A5FA' }}>예)</span> 큐익스프레스 검수비 ¥100/건
+                                                </div>
+                                                <div style={{ marginTop: '8px', fontSize: '11px', color: '#8B95A1' }}>
+                                                    포장·검수비가 없다면 0원으로 설정하세요.
+                                                </div>
+                                            </>
+                                        }
                                     />
-                                    <CostField
-                                        label="해외 배송비"
-                                        labelSub=" (일본 소비자까지)"
-                                        value={intlShipping}
-                                        onChange={v => updateState({ intlShipping: v })}
-                                        hint="이용 중인 배송대행사의 요금을 입력하세요. (큐익스프레스, 링코스 등)"
-                                        prefix="¥"
-                                        highlighted
-                                    />
+                                    {hasForwarderRate ? (
+                                        /* 배송대행사 선택됨 → 요율표 자동 적용 안내 */
+                                        <div>
+                                            <label style={labelStyles}>
+                                                해외 배송비
+                                                <span
+                                                    style={{ position: 'relative', display: 'inline-block', marginLeft: '6px', cursor: 'pointer', verticalAlign: 'middle' }}
+                                                    onMouseEnter={e => { const tip = e.currentTarget.querySelector('[data-tip]') as HTMLElement; if (tip) tip.style.display = 'block'; }}
+                                                    onMouseLeave={e => { const tip = e.currentTarget.querySelector('[data-tip]') as HTMLElement; if (tip) tip.style.display = 'none'; }}
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ display: 'block' }}>
+                                                        <circle cx="8" cy="8" r="7.5" stroke="#B0B8C1" />
+                                                        <text x="8" y="12" textAnchor="middle" fill="#8B95A1" fontSize="10" fontFamily="Pretendard, sans-serif" fontWeight="600">i</text>
+                                                    </svg>
+                                                    <div data-tip style={{
+                                                        display: 'none',
+                                                        position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                                                        background: '#191F28', color: '#fff', borderRadius: '10px', padding: '12px 14px',
+                                                        fontSize: '12px', lineHeight: 1.7, whiteSpace: 'nowrap', zIndex: 100,
+                                                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                                    }}>
+                                                        <div style={{ fontWeight: 700, marginBottom: '6px' }}>해외 배송비란?</div>
+                                                        <div>한국 집하센터에서 일본 소비자까지</div>
+                                                        <div>배송하는 데 드는 비용입니다.</div>
+                                                        <div style={{ marginTop: '6px' }}>
+                                                            배송대행사마다 <span style={{ color: '#60A5FA' }}>무게(kg) 기반 요율표</span>가
+                                                        </div>
+                                                        <div>있어 상품 무게에 따라 자동 계산됩니다.</div>
+                                                        <div style={{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #191F28' }} />
+                                                    </div>
+                                                </span>
+                                            </label>
+                                            <div style={{
+                                                background: '#F2F8FF', border: '1px solid #BFDBFE', borderRadius: '12px',
+                                                padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px',
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Truck size={14} color="#3182F6" />
+                                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#191F28' }}>
+                                                        {forwarderLabel} 요율표 자동 적용
+                                                    </span>
+                                                </div>
+                                                <p style={{ margin: 0, fontSize: '12px', color: '#6B7684', lineHeight: 1.5 }}>
+                                                    상품 무게에 따라 배송비가 자동으로 계산됩니다.
+                                                </p>
+                                                <button
+                                                    onClick={() => setShowRateTable(!showRateTable)}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                                        background: 'none', border: 'none', padding: 0,
+                                                        color: '#3182F6', fontSize: '12px', fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    요율표 보기 {showRateTable ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                                </button>
+                                                {showRateTable && (
+                                                    <div style={{
+                                                        background: '#fff', borderRadius: '8px', padding: '10px 12px',
+                                                        border: '1px solid #E5E8EB', fontSize: '12px',
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontWeight: 600, color: '#4E5968' }}>
+                                                            <span>무게</span><span>배송비</span>
+                                                        </div>
+                                                        {FORWARDER_RATES[forwarder]?.rows.map((row, i) => (
+                                                            <div key={i} style={{
+                                                                display: 'flex', justifyContent: 'space-between',
+                                                                padding: '3px 0', color: '#6B7684',
+                                                                borderTop: i > 0 ? '1px solid #F2F4F6' : 'none',
+                                                            }}>
+                                                                <span>~{row.maxKg}kg</span>
+                                                                <span style={{ fontWeight: 600, color: '#191F28' }}>¥{row.fee.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* 직접 입력 (기타) → 수동 입력 */
+                                        <CostField
+                                            label="해외 배송비"
+                                            value={intlShipping}
+                                            onChange={v => updateState({ intlShipping: v })}
+                                            hint="이용 중인 배송대행사의 요금을 직접 입력하세요."
+                                            prefix="¥"
+                                            highlighted
+                                            infoTip={
+                                                <>
+                                                    <div style={{ fontWeight: 700, marginBottom: '6px' }}>해외 배송비란?</div>
+                                                    <div>한국 집하센터에서 일본 소비자까지</div>
+                                                    <div>배송하는 데 드는 비용입니다.</div>
+                                                    <div style={{ marginTop: '6px' }}>
+                                                        보통 <span style={{ color: '#60A5FA' }}>¥500~¥1,000</span> 수준이며
+                                                    </div>
+                                                    <div>상품 무게에 따라 달라집니다.</div>
+                                                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#8B95A1' }}>
+                                                        대표 상품 기준으로 입력하세요.
+                                                    </div>
+                                                </>
+                                            }
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -251,59 +495,60 @@ export default function BasicMarginPage() {
 
                         {/* 시뮬레이션 컬럼 */}
                         <div style={{ width: '360px', flexShrink: 0 }}>
-                            <div style={{ ...cardStyles, background: '#F4F5F7', border: '1px solid #E5E8EB' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Calculator size={16} color="#3182F6" />
-                                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#191F28' }}>가격 시뮬레이션</div>
-                                </div>
-
-                                {/* 오늘의 환율 */}
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    background: '#EBF4FF', borderRadius: '10px', padding: '9px 12px',
-                                }}>
+                            <div style={{ ...cardStyles, gap: '16px', background: '#F4F5F7', border: '1px solid #E5E8EB' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Calculator size={16} color="#3182F6" />
+                                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#191F28' }}>가격 시뮬레이션</div>
+                                    </div>
+                                    {/* 환율 인라인 */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{
                                             fontSize: '10px', fontWeight: 700, color: '#3182F6',
                                             background: '#fff', borderRadius: '4px', padding: '2px 6px',
-                                            border: '1px solid #BFDBFE', letterSpacing: '0.2px',
-                                        }}>오늘 환율</span>
-                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#191F28' }}>
+                                            border: '1px solid #BFDBFE',
+                                        }}>환율</span>
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#4E5968' }}>
                                             ¥1 = ₩{exchangeRate.toFixed(1)}
                                         </span>
                                     </div>
-                                    <span style={{ fontSize: '11px', color: '#8B95A1' }}>
-                                        {RATE_BASE_TIME} 기준
-                                    </span>
                                 </div>
 
-                                {/* 원가 입력 */}
-                                <div>
-                                    <label style={{ ...labelStyles, fontSize: '12px', color: '#6B7684', marginBottom: '6px' }}>상품 원가 (₩)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input
-                                            type="text"
-                                            value={simBaseCost.toLocaleString()}
-                                            onChange={e => setSimBaseCost(parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
-                                            style={{ ...inputStyles, padding: '12px 36px 12px 14px', fontSize: '14px', fontWeight: 600, border: '1.5px solid #E5E8EB' }}
-                                        />
-                                        <Calculator size={14} color="#B0B8C1" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                                {/* 원가 + 무게 한 줄 */}
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ ...labelStyles, fontSize: '13px', color: '#6B7684', marginBottom: '6px' }}>상품 원가 (₩)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                value={simBaseCost.toLocaleString()}
+                                                onChange={e => setSimBaseCost(parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
+                                                style={{ ...inputStyles, padding: '12px 14px', fontSize: '14px', fontWeight: 600, border: '1.5px solid #E5E8EB' }}
+                                            />
+                                        </div>
                                     </div>
+                                    {hasForwarderRate && (
+                                        <WeightDropdown value={simWeight} onChange={setSimWeight} />
+                                    )}
                                 </div>
+                                {hasForwarderRate && (
+                                    <p style={{ margin: '-6px 0 0', fontSize: '12px', color: '#8B95A1' }}>
+                                        배송비 <strong style={{ color: '#3182F6' }}>¥{shippingJpy.toLocaleString()}</strong> 자동 적용 · 화장품 단품 약 0.1~0.3kg
+                                    </p>
+                                )}
 
                                 {/* 최종 판매가 + 수령액 */}
                                 <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E5E8EB', overflow: 'hidden', textAlign: 'center' }}>
-                                    <div style={{ padding: '20px 16px 16px' }}>
+                                    <div style={{ padding: '16px 16px 14px' }}>
                                         <div style={{ fontSize: '13px', color: '#4E5968', fontWeight: 600, marginBottom: '6px' }}>Qoo10 최종 판매가</div>
                                         <div style={{ color: '#3182F6', display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
-                                            <span style={{ fontSize: '36px', fontWeight: 900 }}>¥{finalPriceJpy.toLocaleString()}</span>
+                                            <span style={{ fontSize: '34px', fontWeight: 900 }}>¥{finalPriceJpy.toLocaleString()}</span>
                                         </div>
-                                        <div style={{ fontSize: '12px', color: '#8B95A1', marginTop: '4px' }}>일본 소비자가 보게 되는 가격</div>
                                     </div>
                                     <div style={{ height: '1px', background: '#F2F4F6', margin: '0 16px' }} />
-                                    <div style={{ padding: '14px 16px 18px', background: '#FAFBFC' }}>
-                                        <div style={{ fontSize: '12px', color: '#8B95A1', lineHeight: 1.5 }}>Qoo10 수수료 약 12% 차감 후 예상 수령액</div>
-                                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#191F28', marginTop: '5px' }}>
+                                    <div style={{ padding: '12px 16px 14px', background: '#FAFBFC' }}>
+                                        <div style={{ fontSize: '12px', color: '#8B95A1' }}>수수료 12% 차감 후 예상 수령액</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#191F28', marginTop: '4px' }}>
                                             ¥{payoutJpy.toLocaleString()}{' '}
                                             <span style={{ fontSize: '13px', fontWeight: 500, color: '#6B7684' }}>(약 ₩{payoutKrw.toLocaleString()})</span>
                                         </div>
@@ -418,7 +663,7 @@ export default function BasicMarginPage() {
                             {[
                                 { label: 'Qoo10 JP 연동', desc: state.storeName || '연동 완료' },
                                 { label: '배송지 및 기본 정보', desc: '출하지 · 반품지 설정 완료' },
-                                { label: '마진 및 비용', desc: `마진 ${marginValue}% · 해외배송 ¥${intlShipping.toLocaleString()}` },
+                                { label: '마진 및 비용', desc: hasForwarderRate ? `마진 ${marginValue}% · ${forwarderLabel} 요율 적용` : `마진 ${marginValue}% · 해외배송 ¥${intlShipping.toLocaleString()}` },
                             ].map((item, i) => (
                                 <div key={i} style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',

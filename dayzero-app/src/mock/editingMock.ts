@@ -1,4 +1,5 @@
 import type { ProductDetail } from '../types/editing';
+import { DETAIL_KO_SVGS } from './detailImageSvgs';
 
 const TRANSLATED_DESCRIPTIONS: Record<string, { ko: string; ja: string }> = {
     beauty: {
@@ -13,24 +14,40 @@ const TRANSLATED_DESCRIPTIONS: Record<string, { ko: string; ja: string }> = {
 
 const PENDING_DESC = '피부 타입에 맞는 순한 성분으로 만들어진 스킨케어 제품입니다. 자극 없이 촉촉하게 피부를 가꿔줍니다.';
 
-const makeThumbnails = (count: number) =>
+const prodNum = (productId: string) => parseInt(productId.replace('prod-', ''), 10) || 1;
+
+const makeThumbnails = (count: number, productId: string) =>
     Array.from({ length: count }, (_, i) => ({
-        id: `thumb-${i}`,
+        id: `thumb-${productId}-${i}`,
         url: `https://placehold.co/600x600/F2F4F6/8B95A1?text=IMG${i + 1}`,
         translatedUrl: null,
         translationStatus: 'none' as const,
         backgroundRemoved: false,
     }));
 
-const makeDetailImages = (count: number) =>
+const makeDetailImages = (count: number, productId: string) =>
     Array.from({ length: count }, (_, i) => ({
-        id: `detail-${i}`,
-        url: `https://placehold.co/800x1200/F2F4F6/8B95A1?text=Detail${i + 1}`,
+        id: `detail-${productId}-${i}`,
+        url: DETAIL_KO_SVGS[i % DETAIL_KO_SVGS.length],
         translatedUrl: null,
         translationStatus: 'none' as const,
         backgroundRemoved: false,
     }));
 
+
+const makeOptions = (productId: string) => {
+    const n = prodNum(productId);
+    if (n % 3 === 0) return [
+        { id: `opt-${productId}-0`, nameKo: '소', nameJa: null, stock: 50 },
+        { id: `opt-${productId}-1`, nameKo: '중', nameJa: null, stock: 80 },
+        { id: `opt-${productId}-2`, nameKo: '대', nameJa: null, stock: 30 },
+    ];
+    if (n % 2 === 0) return [
+        { id: `opt-${productId}-0`, nameKo: '화이트', nameJa: null, stock: 100 },
+        { id: `opt-${productId}-1`, nameKo: '블랙', nameJa: null, stock: 60 },
+    ];
+    return [{ id: `opt-${productId}-0`, nameKo: '기본', nameJa: null, stock: 999 }];
+};
 
 const pendingProductsData = [
     // 기존 번역 완료 상품 1~13 (초기 상태로 변경)
@@ -88,19 +105,30 @@ const pendingProductsData = [
     { id: 'prod-48', title: '[다이소] 모션 감지 LED 센서등 실내용', krw: 5000, provider: '다이소', cat: 'インテリア・寝具 > 照明器具', catId: 'qoo10-light' },
 ];
 
+const makeSourceUrl = (provider: string, id: string): string => {
+    const num = id.replace('prod-', '');
+    switch (provider) {
+        case '올리브영': return `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A00000${num.padStart(6, '0')}`;
+        case '쿠팡': return `https://www.coupang.com/vp/products/${num}00000${num}`;
+        case '다이소': return `https://www.daiso.co.kr/goods/detail/${num.padStart(8, '0')}`;
+        default: return `https://www.coupang.com/vp/products/${num}`;
+    }
+};
+
 const pendingProducts: ProductDetail[] = pendingProductsData.map((p) => ({
     id: p.id,
     titleKo: p.title,
     titleJa: null,
     descriptionKo: PENDING_DESC,
     descriptionJa: null,
-    options: [{ id: 'opt-1', nameKo: '기본', nameJa: null, stock: 999 }],
-    thumbnails: makeThumbnails(3),
-    detailImages: makeDetailImages(5),
+    options: makeOptions(p.id),
+    thumbnails: makeThumbnails(3, p.id),
+    detailImages: makeDetailImages(5, p.id),
     salePriceJpy: Math.round((p.krw / 10.5) * 1.3 / 10) * 10,
     qoo10CategoryId: p.catId,
     qoo10CategoryPath: p.cat,
     provider: p.provider,
+    sourceUrl: makeSourceUrl(p.provider, p.id),
     thumbnailUrl: `https://placehold.co/600x600/F2F4F6/8B95A1?text=${p.id}`,
     originalPriceKrw: p.krw,
     translationStatus: 'pending' as const,
@@ -108,8 +136,10 @@ const pendingProducts: ProductDetail[] = pendingProductsData.map((p) => ({
     lastSavedAt: null,
     createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
     isRead: true,
-    weightKg: 0.5,
-    isWeightEstimated: true,
+    weightKg: [0.15, 0.25, 0.3, 0.5, 0.45, 0.8, 0.2, 1.2, 0.35, 0.6][prodNum(p.id) % 10],
+    isWeightEstimated: prodNum(p.id) % 3 !== 0,
+    weightSource: (prodNum(p.id) % 3 === 0 ? 'crawled' : 'ai') as 'crawled' | 'ai' | 'manual',
+    priceSource: (prodNum(p.id) % 4 === 0 ? 'ai' : 'crawled') as 'crawled' | 'ai' | 'manual',
 }));
 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();

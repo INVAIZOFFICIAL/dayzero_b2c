@@ -88,6 +88,12 @@ export const UrlSourcingContent = () => {
         const urlsSnapshot = parsedUrls;
         let successProcessed = 0;
 
+        // AI 무게 예측 최소 1개 보장: 유효한 URL 중 하나는 반드시 AI 예측
+        const validIndices = urlsSnapshot.map((_, i) => i).filter(i => !urlsSnapshot[i].error);
+        const guaranteedAIIdx = validIndices.length > 0
+            ? validIndices[Math.floor(Math.random() * validIndices.length)]
+            : -1;
+
         for (let i = 0; i < urlsSnapshot.length; i++) {
             const current = urlsSnapshot[i];
             if (current.error) continue;
@@ -185,16 +191,45 @@ export const UrlSourcingContent = () => {
                 // 무게 시뮬레이션 (수집된 무게 vs AI 예측 무게)
                 const isAlbum = realTitle.includes('Album') || realTitle.includes('음반');
 
-                // 80% 확률로 실제 무게 수집 성공, 20% 확률로 AI 예측 필요 시뮬레이션
-                const isAIPredicted = Math.random() < 0.2;
+                // 지정된 인덱스는 반드시 AI 예측, 나머지는 20% 확률
+                const isAIPredicted = i === guaranteedAIIdx || Math.random() < 0.2;
                 const weightKg = isAlbum ? 0.45 : 0.25;
+
+                // 상품 유형별 다양한 옵션 생성
+                const makeOptions = () => {
+                    const pid = mockProduct.id;
+                    if (isKpop) {
+                        // K-pop: 버전 옵션 2~3개
+                        const versions = ['ver. A', 'ver. B', 'ver. C'];
+                        const count = 2 + (i % 2); // 2 or 3
+                        return versions.slice(0, count).map((v, vi) => ({
+                            id: `opt-${pid}-${vi}`, nameKo: v, nameJa: null, stock: 500 + vi * 100,
+                        }));
+                    }
+                    const beautyOptions = [
+                        [{ nameKo: '본품', stock: 999 }, { nameKo: '본품+리필', stock: 500 }],
+                        [{ nameKo: '21호 라이트', stock: 800 }, { nameKo: '23호 미디엄', stock: 600 }, { nameKo: '25호 딥', stock: 400 }],
+                        [{ nameKo: '기본', stock: 999 }],
+                        [{ nameKo: '50ml', stock: 700 }, { nameKo: '100ml', stock: 500 }],
+                    ];
+                    const dailyOptions = [
+                        [{ nameKo: '기본', stock: 999 }],
+                        [{ nameKo: '소', stock: 800 }, { nameKo: '중', stock: 600 }, { nameKo: '대', stock: 400 }],
+                        [{ nameKo: '화이트', stock: 500 }, { nameKo: '블랙', stock: 500 }],
+                    ];
+                    const optSet = catPath.includes('생활용품') ? dailyOptions : beautyOptions;
+                    const chosen = optSet[i % optSet.length];
+                    return chosen.map((o, vi) => ({
+                        id: `opt-${pid}-${vi}`, nameKo: o.nameKo, nameJa: null, stock: o.stock,
+                    }));
+                };
 
                 useEditingStore.getState().addProduct({
                     id: mockProduct.id,
                     titleKo: mockProduct.title,
                     descriptionKo: '수집된 상세설명 입니다.',
-                    options: [],
-                    titleJa: realTitleJa,
+                    options: makeOptions(),
+                    titleJa: null,
                     descriptionJa: null,
                     thumbnails: [{ id: `thumb-${mockProduct.id}`, url: mockProduct.thumbnailUrl, translatedUrl: null, translationStatus: 'none', backgroundRemoved: false }],
                     detailImages: [],
@@ -202,6 +237,7 @@ export const UrlSourcingContent = () => {
                     qoo10CategoryId: catId,
                     qoo10CategoryPath: catPath,
                     provider: mockProduct.provider,
+                    sourceUrl: mockProduct.sourceUrl,
                     thumbnailUrl: mockProduct.thumbnailUrl,
                     originalPriceKrw: mockProduct.originalPriceKrw,
                     translationStatus: 'pending',
@@ -212,6 +248,8 @@ export const UrlSourcingContent = () => {
                     jobId: mockProduct.jobId,
                     weightKg: weightKg,
                     isWeightEstimated: isAIPredicted,
+                    weightSource: isAIPredicted ? 'ai' as const : 'crawled' as const,
+                    priceSource: 'crawled' as const,
                 });
 
                 addProduct(mockProduct);

@@ -19,7 +19,25 @@
       "WebFetch(domain:help.dsers.com)",
       "WebFetch(domain:www.autods.com)",
       "Bash(grep -rn \"from 'lucide-react'\" /Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app/src/pages/editing/ 2>/dev/null)",
-      "mcp__plugin_oh-my-claudecode_t__lsp_diagnostics"
+      "mcp__plugin_oh-my-claudecode_t__lsp_diagnostics",
+      "Bash(npx vite:*)",
+      "WebFetch(domain:doc.image-qoo10.jp)",
+      "WebFetch(domain:www.clien.net)",
+      "WebFetch(domain:goskyroad.com)",
+      "WebFetch(domain:www.rincos.co.kr)",
+      "WebFetch(domain:www.enter-round.kr)",
+      "WebFetch(domain:hiworl.com)",
+      "WebFetch(domain:pdf4pro.com)",
+      "WebFetch(domain:qfsapi.qxpress.asia)",
+      "WebFetch(domain:www.qxpress.net)",
+      "WebFetch(domain:www.rincos.net)",
+      "WebFetch(domain:www.ibuybeauti.com)",
+      "WebFetch(domain:www.tracxlogis.com)",
+      "WebFetch(domain:www.rincos.asia)",
+      "WebFetch(domain:post.malltail.com)",
+      "WebFetch(domain:www.sedaily.com)",
+      "WebFetch(domain:poomgo.com)",
+      "WebFetch(domain:article-university.qoo10.jp)"
     ]
   }
 }

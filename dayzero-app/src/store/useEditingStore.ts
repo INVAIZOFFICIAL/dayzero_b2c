@@ -1,30 +1,8 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ProductDetail, TranslationJob, EditTabFilter, TranslationBatch, RegistrationBatch } from '../types/editing';
-import { MOCK_PRODUCTS, PENDING_JA_TITLES } from '../mock/editingMock';
-
-const PROVIDER_PREFIX_MAP: Record<string, string> = {
-    '[위버스샵]': '[Weverse Shop]',
-    '[Ktown4u]': '[Ktown4u]',
-    '[메이크스타]': '[Makestar]',
-    '[위치폼]': '[Wicefom]',
-    '[FANS]': '[FANS]',
-    '[올리브영]': '[Olive Young]',
-    '[쿠팡]': '[Coupang]',
-    '[다이소]': '[Daiso]',
-    '[yes24]': '[yes24]',
-    '[알라딘]': '[aladin]',
-};
-
-const toJaTitle = (titleKo: string): string => {
-    let result = titleKo;
-    for (const [ko, en] of Object.entries(PROVIDER_PREFIX_MAP)) {
-        if (result.includes(ko)) {
-            result = result.replace(ko, en);
-            break;
-        }
-    }
-    return result;
-};
+import { PENDING_JA_TITLES } from '../mock/editingMock';
+import { toJaTitle, mockTranslateOption, MOCK_DESC_JA } from '../utils/editing';
 
 interface EditingState {
     products: ProductDetail[];
@@ -77,12 +55,15 @@ interface EditingState {
     removeTranslationBatch: (id: string) => void;
     removeRegistrationBatch: (id: string) => void;
     startRegistrationBatch: (productIds: string[]) => void;
+    addCompletedTranslationBatch: (productId: string, label: string) => void;
     markProductsRead: (exceptJobId?: string) => void;
     selectByJobId: (jobId: string) => void;
 }
 
-export const useEditingStore = create<EditingState>((set, get) => ({
-    products: MOCK_PRODUCTS,
+export const useEditingStore = create<EditingState>()(
+  persist(
+    (set, get) => ({
+    products: [],
 
     selectedProductIds: [],
     activeTab: 'all',
@@ -189,16 +170,26 @@ export const useEditingStore = create<EditingState>((set, get) => ({
             if (updates.status === 'completed') {
                 const job = state.translationJobs.find((j) => j.id === jobId);
                 if (job) {
-                    updatedProducts = state.products.map((p) =>
-                        p.id === job.productId
-                            ? {
-                                ...p,
-                                translationStatus: 'completed' as const,
-                                isReTranslating: false,
-                                titleJa: PENDING_JA_TITLES[p.id] ?? p.titleJa ?? toJaTitle(p.titleKo),
-                            }
-                            : p
-                    );
+                    updatedProducts = state.products.map((p) => {
+                        if (p.id !== job.productId) return p;
+                        const productUpdates: Partial<typeof p> = {
+                            translationStatus: 'completed' as const,
+                            isReTranslating: false,
+                        };
+                        if (job.targets.includes('title')) {
+                            productUpdates.titleJa = PENDING_JA_TITLES[p.id] ?? toJaTitle(p.titleKo);
+                        }
+                        if (job.targets.includes('options')) {
+                            productUpdates.options = p.options.map(o => ({
+                                ...o,
+                                nameJa: mockTranslateOption(o.nameKo),
+                            }));
+                        }
+                        if (job.targets.includes('description')) {
+                            productUpdates.descriptionJa = MOCK_DESC_JA;
+                        }
+                        return { ...p, ...productUpdates };
+                    });
                 }
             }
             if (updates.status === 'failed') {
@@ -316,6 +307,19 @@ export const useEditingStore = create<EditingState>((set, get) => ({
             }, delay);
         });
     },
+    addCompletedTranslationBatch: (productId, label) => {
+        const batch: TranslationBatch = {
+            id: `tb-detail-${Date.now()}`,
+            productIds: [productId],
+            totalCount: 1,
+            currentCount: 1,
+            status: 'completed',
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            label,
+        };
+        set((state) => ({ translationBatches: [batch, ...state.translationBatches] }));
+    },
     markProductsRead: (exceptJobId) => set((state) => ({
         products: state.products.map(p => {
             if (p.isRead) return p;
@@ -329,4 +333,37 @@ export const useEditingStore = create<EditingState>((set, get) => ({
             .map(p => p.id);
         return { selectedProductIds: productIds };
     }),
-}));
+  }),
+  {
+      name: 'dayzero-editing-products',
+      partialize: (state) => ({ products: state.products }),
+      onRehydrateStorage: () => (state) => {
+          if (!state) return;
+          state.products = state.products.map(p => {
+              let updated = p;
+              // titleJa가 titleKo와 동일하면 번역 실패 → 초기화
+              if (updated.titleJa && updated.titleJa === updated.titleKo) {
+                  updated = { ...updated, titleJa: null };
+              }
+              // HMR/새로고침 시 'processing' 상태에서 멈춘 상품 복구
+              if (updated.translationStatus === 'processing') {
+                  // 번역 데이터가 있으면 completed, 없으면 pending
+                  const hasTranslation = !!updated.titleJa;
+                  updated = {
+                      ...updated,
+                      translationStatus: hasTranslation ? 'completed' as const : 'pending' as const,
+                      isReTranslating: false,
+                  };
+              }
+              // weightSource / priceSource 필드가 없는 기존 데이터 보정
+              if (!updated.weightSource) {
+                  updated = { ...updated, weightSource: updated.isWeightEstimated ? 'ai' as const : 'crawled' as const };
+              }
+              if (!updated.priceSource) {
+                  updated = { ...updated, priceSource: 'crawled' as const };
+              }
+              return updated;
+          });
+      },
+  }
+));

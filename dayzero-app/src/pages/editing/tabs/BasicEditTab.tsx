@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, Search, Check, X, Sparkles, Loader2, PenLine, Languages } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Search, Check, X, Loader2, PenLine, Languages } from 'lucide-react';
 import type { ProductDetail, ProductOption } from '../../../types/editing';
 import { useEditingStore } from '../../../store/useEditingStore';
 import { QOO10_CATEGORY_KO, toKoCategory } from '../../../mock/categoryMap';
 import { PENDING_JA_TITLES } from '../../../mock/editingMock';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
+import { stripPrefix, toJaTitle, mockTranslateOption as mockTranslateOpt } from '../../../utils/editing';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
 
 interface Props {
@@ -12,8 +13,6 @@ interface Props {
 }
 
 const MAX_DESC = 10000;
-
-const stripPrefix = (title: string) => title.replace(/^\[[^\]]+\]\s*/, '');
 
 // ── 공통 스타일 상수 ────────────────────────────────────────────────────────
 const flexBetween: React.CSSProperties = {
@@ -38,22 +37,6 @@ const sectionLabelStyle: React.CSSProperties = {
 const ghostButtonBase: React.CSSProperties = {
     background: 'none', border: 'none', cursor: 'pointer',
 };
-
-// ── 옵션명 mock 번역 사전 ──────────────────────────────────────────────────────
-const OPTION_KO_JA: Record<string, string> = {
-    '기본': '標準', '기본색': '基本色', '일반': '通常',
-    '소': '小', '중': '中', '대': '大',
-    'S': 'S', 'M': 'M', 'L': 'L', 'XL': 'XL', 'XXL': 'XXL',
-    '화이트': 'ホワイト', '블랙': 'ブラック', '핑크': 'ピンク',
-    '블루': 'ブルー', '그린': 'グリーン', '레드': 'レッド',
-    '베이지': 'ベージュ', '아이보리': 'アイボリー',
-    '네이비': 'ネイビー', '그레이': 'グレー',
-    '옐로우': 'イエロー', '퍼플': 'パープル',
-    '민트': 'ミント', '라벤더': 'ラベンダー',
-    '1개': '1個', '2개': '2個', '3개': '3個', '5개': '5個',
-    '1세트': '1セット', '2세트': '2セット',
-};
-const mockTranslateOption = (ko: string): string => OPTION_KO_JA[ko.trim()] ?? ko;
 
 // ── 한국어 원문 hover 툴팁 ────────────────────────────────────────────────────
 const KoTooltip: React.FC<{ pos: { x: number; y: number }; text: string }> = ({ pos, text }) => {
@@ -138,7 +121,7 @@ const AIButton: React.FC<{
     disabled?: boolean;
     size?: 'sm' | 'md';
     icon?: React.ReactNode;
-}> = ({ loading, onClick, label = 'AI 번역', loadingLabel = '처리 중...', disabled = false, size = 'md', icon = <Sparkles size={13} /> }) => {
+}> = ({ loading, onClick, label = 'AI 편집', loadingLabel = '처리 중...', disabled = false, size = 'md', icon = <Languages size={13} /> }) => {
     const isDisabled = loading || disabled;
     return (
         <button
@@ -148,14 +131,14 @@ const AIButton: React.FC<{
                 display: 'inline-flex', alignItems: 'center', gap: '5px',
                 padding: size === 'sm' ? `5px ${spacing['2']}` : `7px ${spacing['3']}`,
                 background: isDisabled ? colors.bg.subtle : colors.primaryLight,
-                border: `1px solid ${isDisabled ? colors.border.default : '#C7DCFD'}`,
+                border: `1px solid ${isDisabled ? colors.border.default : colors.primaryBorder}`,
                 borderRadius: radius.md,
                 fontSize: font.size.sm, fontWeight: 600,
                 color: isDisabled ? colors.text.muted : colors.primary,
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s', flexShrink: 0,
             }}
-            onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.background = '#DCEEFE'; }}
+            onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.background = colors.primaryHover; }}
             onMouseLeave={e => { if (!isDisabled) e.currentTarget.style.background = isDisabled ? colors.bg.subtle : colors.primaryLight; }}
         >
             {loading ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : icon}
@@ -332,6 +315,8 @@ const OptionRow: React.FC<{
                     </div>
                 ) : (
                     <input
+                        key={option.nameJa ? 'ja' : 'empty'}
+                        className={option.nameJa ? 'content-fade-in' : undefined}
                         value={option.nameJa ?? ''}
                         onChange={e => onChange('nameJa', e.target.value)}
                         placeholder={option.nameKo || '옵션명 입력'}
@@ -396,8 +381,11 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
     const [isTranslatingTitle, setIsTranslatingTitle] = useState(false);
     const [isWritingDesc, setIsWritingDesc] = useState(false);
     const [isTranslatingDesc, setIsTranslatingDesc] = useState(false);
-    const [descKo, setDescKo] = useState('');
-    const [descMode, setDescMode] = useState<'ko' | 'ja'>('ja');
+    const _hasAIDraft = !!product.descriptionKo && product.descriptionKo.includes('【');
+    const [descKo, setDescKo] = useState(_hasAIDraft ? product.descriptionKo : '');
+    const [descMode, setDescMode] = useState<'ko' | 'ja'>(
+        product.descriptionJa ? 'ja' : (_hasAIDraft ? 'ko' : 'ja')
+    );
     const [showWriteConfirm, setShowWriteConfirm] = useState(false);
     const [showTranslateTooltip, setShowTranslateTooltip] = useState(false);
     const [translatingOptionIds, setTranslatingOptionIds] = useState<Set<string>>(new Set());
@@ -414,15 +402,16 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
     useEffect(() => {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         if (savedTimer.current) clearTimeout(savedTimer.current);
-        setTitleJa(product.titleJa ? stripPrefix(product.titleJa) : '');
+        setTitleJa(product.titleJa ? stripPrefix(product.titleJa) : stripPrefix(product.titleKo));
         setDescJa(product.descriptionJa ?? '');
         setOptions([...product.options]);
         setSaveStatus('idle');
         setIsTranslatingTitle(false);
         setIsWritingDesc(false);
         setIsTranslatingDesc(false);
-        setDescKo('');
-        setDescMode('ja');
+        const hasDraft = !!product.descriptionKo && product.descriptionKo.includes('【');
+        setDescKo(hasDraft ? product.descriptionKo : '');
+        setDescMode(product.descriptionJa ? 'ja' : (hasDraft ? 'ko' : 'ja'));
         setShowWriteConfirm(false);
         setShowTranslateTooltip(false);
         setTranslatingOptionIds(new Set());
@@ -436,6 +425,25 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
             if (savedTimer.current) clearTimeout(savedTimer.current);
         };
     }, []);
+
+    // 외부(일괄 번역 등)에서 store가 변경됐을 때 로컬 상태 동기화
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        setTitleJa(product.titleJa ? stripPrefix(product.titleJa) : stripPrefix(product.titleKo));
+    }, [product.titleJa]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        setOptions([...product.options]);
+    }, [product.options]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (product.descriptionJa) {
+            setDescJa(product.descriptionJa);
+            setDescMode('ja');
+        }
+    }, [product.descriptionJa]);
 
     const triggerSave = useCallback(() => {
         if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -456,11 +464,12 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
         if (isTranslatingTitle) return;
         setIsTranslatingTitle(true);
         setTimeout(() => {
-            const raw = PENDING_JA_TITLES[product.id] ?? product.titleJa ?? product.titleKo;
-            setTitleJa(stripPrefix(raw));
+            const raw = PENDING_JA_TITLES[product.id] ?? toJaTitle(product.titleKo);
+            const translatedTitle = stripPrefix(raw);
+            setTitleJa(translatedTitle);
             setIsTranslatingTitle(false);
-            triggerSave();
-        }, 1500);
+            updateProduct(product.id, { titleJa: translatedTitle });
+        }, 2500 + Math.random() * 1000);
     };
 
     const hasDescContent = descKo.trim() || descJa.trim();
@@ -468,10 +477,12 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
     const doWriteDesc = () => {
         setIsWritingDesc(true);
         setTimeout(() => {
-            setDescKo('이 제품은 피부 타입에 맞는 순한 성분으로 만들어진 스킨케어 제품입니다. 자극 없이 촉촉하게 피부를 정돈해 드립니다.\n\n【특징】\n・민감한 피부에도 부드러운 저자극 처방\n・오래 지속되는 보습을 유지하는 히알루론산 함유\n・한국 코스메틱 브랜드의 인기 상품\n\n【사용 방법】\n세안 후 적당량을 피부에 부드럽게 발라주세요.');
+            const newKo = '이 제품은 피부 타입에 맞는 순한 성분으로 만들어진 스킨케어 제품입니다. 자극 없이 촉촉하게 피부를 정돈해 드립니다.\n\n【특징】\n・민감한 피부에도 부드러운 저자극 처방\n・오래 지속되는 보습을 유지하는 히알루론산 함유\n・한국 코스메틱 브랜드의 인기 상품\n\n【사용 방법】\n세안 후 적당량을 피부에 부드럽게 발라주세요.';
+            setDescKo(newKo);
             setDescMode('ko');
             setIsWritingDesc(false);
-        }, 2000);
+            updateProduct(product.id, { descriptionKo: newKo });
+        }, 3500 + Math.random() * 1500);
     };
 
     const handleWriteDesc = () => {
@@ -484,28 +495,43 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
         if (isTranslatingDesc || !descKo.trim()) return;
         setIsTranslatingDesc(true);
         setTimeout(() => {
-            setDescJa('肌タイプに合わせた優しい成分で作られたスキンケア製品です。刺激なくしっとりと肌を整えます。\n\n【特徴】\n・敏感肌にも優しい低刺激処方\n・長時間保湿をキープするヒアルロン酸配合\n・韓国コスメブランドの人気商品\n\n【使用方法】\n洗顔後、適量をお肌に優しく馴染ませてください。');
+            const newJa = '肌タイプに合わせた優しい成分で作られたスキンケア製品です。刺激なくしっとりと肌を整えます。\n\n【特徴】\n・敏感肌にも優しい低刺激処方\n・長時間保湿をキープするヒアルロン酸配合\n・韓国コスメブランドの人気商品\n\n【使用方法】\n洗顔後、適量をお肌に優しく馴染ませてください。';
+            setDescJa(newJa);
             setDescMode('ja');
             setIsTranslatingDesc(false);
-            triggerSave();
-        }, 1500);
+            updateProduct(product.id, {
+                descriptionJa: newJa,
+                translationStatus: 'completed',
+            });
+        }, 2500 + Math.random() * 1000);
     };
 
     const handleTranslateOptions = () => {
         if (options.length === 0) return;
         const ids = new Set(options.map(o => o.id));
         setTranslatingOptionIds(ids);
-        options.forEach((opt, i) => {
+        const snapshot = [...options];
+        let cumulativeDelay = 0;
+        snapshot.forEach((opt, i) => {
+            cumulativeDelay += 1200 + Math.random() * 600;
+            const delay = cumulativeDelay;
             setTimeout(() => {
-                const jaName = mockTranslateOption(opt.nameKo);
+                const jaName = mockTranslateOpt(opt.nameKo);
                 setOptions(prev => prev.map(o => o.id === opt.id ? { ...o, nameJa: jaName } : o));
                 setTranslatingOptionIds(prev => {
                     const next = new Set(prev);
                     next.delete(opt.id);
                     return next;
                 });
-                if (i === options.length - 1) triggerSave();
-            }, (i + 1) * 800);
+                // 마지막 옵션 완료 시 즉시 저장 (ref 동기화 지연 우회)
+                if (i === snapshot.length - 1) {
+                    const translatedOptions = snapshot.map(o => ({
+                        ...o,
+                        nameJa: mockTranslateOpt(o.nameKo),
+                    }));
+                    updateProduct(product.id, { options: translatedOptions });
+                }
+            }, delay);
         });
     };
 
@@ -543,6 +569,8 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                 @keyframes modalIn { from { opacity:0; transform:translate(-50%,-48%); } to { opacity:1; transform:translate(-50%,-50%); } }
                 @keyframes savedIn { from { opacity:0; } to { opacity:1; } }
                 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+                @keyframes contentFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+                .content-fade-in { animation: contentFadeIn 0.4s ease; }
                 .stock-input::-webkit-outer-spin-button,
                 .stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
                 .stock-input { -moz-appearance: textfield; }
@@ -559,7 +587,33 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                         {saveStatus === 'saved' && (
                             <span style={{ fontSize: font.size.xs, color: colors.success, animation: 'savedIn 0.2s ease' }}>저장됨 ✓</span>
                         )}
-                        <AIButton loading={isTranslatingTitle} onClick={handleTranslateTitle} label="AI 번역" />
+                        <div
+                            style={{ position: 'relative' }}
+                            onMouseEnter={e => { if (hasJaTitle) (e.currentTarget.querySelector('[data-title-tip]') as HTMLElement)?.style.setProperty('display', 'block'); }}
+                            onMouseLeave={e => { (e.currentTarget.querySelector('[data-title-tip]') as HTMLElement)?.style.setProperty('display', 'none'); }}
+                        >
+                            <AIButton loading={isTranslatingTitle} onClick={handleTranslateTitle} label="AI 편집" disabled={hasJaTitle} />
+                            {hasJaTitle && (
+                                <div
+                                    data-title-tip=""
+                                    style={{
+                                        display: 'none',
+                                        position: 'absolute', bottom: 'calc(100% + 6px)', right: 0,
+                                        background: colors.text.primary, color: '#fff',
+                                        fontSize: font.size.xs, padding: '5px 10px',
+                                        borderRadius: radius.md, whiteSpace: 'nowrap',
+                                        pointerEvents: 'none', zIndex: zIndex.dropdown,
+                                        animation: 'tooltipFadeIn 0.15s ease',
+                                    }}
+                                >
+                                    이미 편집되어 있습니다
+                                    <div style={{
+                                        position: 'absolute', top: '100%', right: '12px',
+                                        border: '4px solid transparent', borderTopColor: colors.text.primary,
+                                    }} />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 {/* hover 시 한국어 원문 툴팁 */}
@@ -580,10 +634,12 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                         </div>
                     ) : (
                         <input
+                            key={hasJaTitle ? 'ja' : 'empty'}
+                            className={hasJaTitle ? 'content-fade-in' : undefined}
                             type="text"
                             value={titleJa}
                             onChange={e => { setTitleJa(e.target.value); triggerSave(); }}
-                            placeholder={titleJa ? '일본어 상품명을 수정하세요' : 'AI 번역 버튼을 눌러 자동 번역하거나 직접 입력하세요'}
+                            placeholder={titleJa ? '일본어 상품명을 수정하세요' : 'AI 편집 버튼을 눌러 자동 번역하거나 직접 입력하세요'}
                             style={inputBase}
                             onFocus={e => { e.target.style.borderColor = colors.primary; setTitleTooltip(null); }}
                             onBlur={e => (e.target.style.borderColor = colors.border.default)}
@@ -635,11 +691,36 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                             {options.length}개
                         </span>
                     </span>
-                    <AIButton
-                        loading={isTranslatingAnyOption}
-                        onClick={handleTranslateOptions}
-                        label="AI 번역"
-                    />
+                    {(() => {
+                        const allOptionsDone = options.length > 0 && options.every(o => !!o.nameJa);
+                        return (
+                            <div
+                                style={{ position: 'relative' }}
+                                onMouseEnter={e => { if (allOptionsDone) (e.currentTarget.querySelector('[data-opt-tip]') as HTMLElement)?.style.setProperty('display', 'block'); }}
+                                onMouseLeave={e => { (e.currentTarget.querySelector('[data-opt-tip]') as HTMLElement)?.style.setProperty('display', 'none'); }}
+                            >
+                                <AIButton
+                                    loading={isTranslatingAnyOption}
+                                    onClick={handleTranslateOptions}
+                                    label="AI 편집"
+                                    disabled={allOptionsDone}
+                                />
+                                {allOptionsDone && (
+                                    <div data-opt-tip="" style={{
+                                        display: 'none', position: 'absolute', bottom: 'calc(100% + 6px)', right: 0,
+                                        background: colors.text.primary, color: '#fff',
+                                        fontSize: font.size.xs, padding: '5px 10px',
+                                        borderRadius: radius.md, whiteSpace: 'nowrap',
+                                        pointerEvents: 'none', zIndex: zIndex.dropdown,
+                                        animation: 'tooltipFadeIn 0.15s ease',
+                                    }}>
+                                        이미 편집되어 있습니다
+                                        <div style={{ position: 'absolute', top: '100%', right: '12px', border: '4px solid transparent', borderTopColor: colors.text.primary }} />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <div style={{
@@ -713,11 +794,11 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                         <AIButton loading={isWritingDesc} onClick={handleWriteDesc} label="AI 작성" loadingLabel="작성 중..." icon={<PenLine size={13} />} />
                         <div
                             style={{ position: 'relative' }}
-                            onMouseEnter={() => { if (!descKo.trim()) setShowTranslateTooltip(true); }}
+                            onMouseEnter={() => { if (!descKo.trim() || !!descJa) setShowTranslateTooltip(true); }}
                             onMouseLeave={() => setShowTranslateTooltip(false)}
                         >
-                            <AIButton loading={isTranslatingDesc} onClick={handleTranslateDesc} label="AI 번역" loadingLabel="번역 중..." disabled={!descKo.trim()} icon={<Languages size={13} />} />
-                            {showTranslateTooltip && !descKo.trim() && (
+                            <AIButton loading={isTranslatingDesc} onClick={handleTranslateDesc} label="AI 편집" loadingLabel="번역 중..." disabled={!descKo.trim() || !!descJa} icon={<Languages size={13} />} />
+                            {showTranslateTooltip && (!descKo.trim() || !!descJa) && (
                                 <div style={{
                                     position: 'absolute', top: 'calc(100% + 6px)', right: 0,
                                     background: colors.text.primary, color: '#fff',
@@ -725,8 +806,9 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                                     fontSize: font.size.xs, fontWeight: 500,
                                     whiteSpace: 'nowrap', zIndex: zIndex.dropdown,
                                     pointerEvents: 'none',
+                                    animation: 'tooltipFadeIn 0.15s ease',
                                 }}>
-                                    {descMode === 'ja' && descJa ? '이미 일본어로 번역되어 있습니다' : 'AI 작성을 먼저 해주세요'}
+                                    {descJa ? '이미 편집되어 있습니다' : 'AI 작성을 먼저 해주세요'}
                                 </div>
                             )}
                         </div>
@@ -734,39 +816,52 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                 </div>
 
                 <div style={{ position: 'relative' }}>
-                    <textarea
-                        value={descMode === 'ko' ? descKo : descJa}
-                        onChange={e => {
-                            if (descMode === 'ko') {
-                                setDescKo(e.target.value);
-                            } else {
-                                if (e.target.value.length <= MAX_DESC) { setDescJa(e.target.value); triggerSave(); }
-                            }
-                        }}
-                        placeholder={
-                            isWritingDesc ? '작성 중...' :
-                            isTranslatingDesc ? '번역 중...' :
-                            descMode === 'ko' ? '수정 후 AI 번역 버튼을 눌러 일본어로 변환하세요' :
-                            product.translationStatus === 'completed' ? '일본어 상세설명을 수정하세요' :
-                            'AI 작성 버튼으로 한국어 초안을 만들거나 직접 입력하세요'
-                        }
-                        disabled={isWritingDesc || isTranslatingDesc}
-                        rows={10}
-                        style={{
+                    {(isWritingDesc || isTranslatingDesc) ? (
+                        <div style={{
                             ...inputBase,
-                            resize: 'vertical', lineHeight: font.lineHeight.relaxed, paddingBottom: '32px',
-                            background: (isWritingDesc || isTranslatingDesc) ? colors.bg.faint : colors.bg.surface,
-                        }}
-                        onFocus={e => (e.target.style.borderColor = colors.primary)}
-                        onBlur={e => (e.target.style.borderColor = colors.border.default)}
-                    />
-                    <div style={{
-                        position: 'absolute', bottom: spacing['2'], right: spacing['3'],
-                        fontSize: font.size.xs, color: descCountColor,
-                        pointerEvents: 'none', transition: 'color 0.3s',
-                    }}>
-                        {descCount.toLocaleString()} / {MAX_DESC.toLocaleString()}
-                    </div>
+                            display: 'flex', alignItems: 'flex-start', gap: '8px',
+                            color: colors.primary, background: colors.primaryLight,
+                            borderColor: colors.primary,
+                            minHeight: '280px',
+                        }}>
+                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                            {isWritingDesc ? '한국어 초안 작성 중...' : '일본어로 번역 중...'}
+                        </div>
+                    ) : (
+                        <>
+                            <textarea
+                                key={descMode === 'ja' && descJa ? 'ja-filled' : descMode === 'ko' && descKo ? 'ko-filled' : 'empty'}
+                                className={(descMode === 'ja' && descJa) || (descMode === 'ko' && descKo) ? 'content-fade-in' : undefined}
+                                value={descMode === 'ko' ? descKo : descJa}
+                                onChange={e => {
+                                    if (descMode === 'ko') {
+                                        setDescKo(e.target.value);
+                                    } else {
+                                        if (e.target.value.length <= MAX_DESC) { setDescJa(e.target.value); triggerSave(); }
+                                    }
+                                }}
+                                placeholder={
+                                    descMode === 'ko' ? '수정 후 AI 편집 버튼을 눌러 일본어로 변환하세요' :
+                                    product.translationStatus === 'completed' ? '일본어 상세설명을 수정하세요' :
+                                    'AI 작성 버튼으로 한국어 초안을 만들거나 직접 입력하세요'
+                                }
+                                rows={10}
+                                style={{
+                                    ...inputBase,
+                                    resize: 'vertical', lineHeight: font.lineHeight.relaxed, paddingBottom: '32px',
+                                }}
+                                onFocus={e => (e.target.style.borderColor = colors.primary)}
+                                onBlur={e => (e.target.style.borderColor = colors.border.default)}
+                            />
+                            <div style={{
+                                position: 'absolute', bottom: spacing['2'], right: spacing['3'],
+                                fontSize: font.size.xs, color: descCountColor,
+                                pointerEvents: 'none', transition: 'color 0.3s',
+                            }}>
+                                {descCount.toLocaleString()} / {MAX_DESC.toLocaleString()}
+                            </div>
+                        </>
+                    )}
                 </div>
                 {product.descriptionKo && descMode === 'ja' && !descJa && <KoToggle text={product.descriptionKo} />}
             </div>

@@ -29,6 +29,13 @@ const PRESETS: ForwarderPreset[] = [
         addressLine2: 'リンコス東京物流管理センター',
     },
     {
+        id: 'kse',
+        label: 'KSE 국제로지스틱 (Kokusai Express)',
+        zipCode: '812-0051',
+        addressLine1: '福岡県福岡市東区箱崎ふ頭4丁目2-39',
+        addressLine2: '国際エキスプレス 福岡保税倉庫',
+    },
+    {
         id: 'other',
         label: '직접 입력하기 (기타)',
         zipCode: '',

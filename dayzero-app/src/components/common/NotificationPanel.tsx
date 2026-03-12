@@ -393,7 +393,7 @@ export const NotificationPanel: React.FC = () => {
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing['1'] }}>
                                                             <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                상품 번역
+                                                                {batch.label ?? '상품 번역'}
                                                             </div>
                                                             {!isRunning && isHovered ? (
                                                                 <button

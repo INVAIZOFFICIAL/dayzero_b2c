@@ -9,7 +9,9 @@ import { EditingHeader } from './components/EditingHeader';
 import { EditingTabBar, type DetailTab } from './components/EditingTabBar';
 import { BasicEditTab } from './tabs/BasicEditTab';
 import { PriceEditTab } from './tabs/PriceEditTab';
-import { colors, font, spacing } from '../../design/tokens';
+import { ThumbnailEditTab } from './tabs/ThumbnailEditTab';
+import { DetailImageEditTab } from './tabs/DetailImageEditTab';
+import { colors, spacing } from '../../design/tokens';
 
 export default function EditingDetailPage() {
     const { productId } = useParams<{ productId: string }>();
@@ -108,14 +110,11 @@ export default function EditingDetailPage() {
 
                     {activeTab === 'basic' && <BasicEditTab product={product} />}
                     {activeTab === 'price' && <PriceEditTab product={product} />}
-                    {activeTab === 'thumbnail' && (
-                        <div style={{
-                            padding: `${spacing['12']} 0`,
-                            textAlign: 'center',
-                            color: colors.text.muted,
-                            fontSize: font.size.base,
-                        }}>
-                            썸네일/상세페이지 AI 편집 — Step 6·7에서 구현 예정
+                    {activeTab === 'images' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['12'] }}>
+                            <ThumbnailEditTab product={product} />
+                            <div style={{ maxWidth: '760px', borderTop: `1px solid ${colors.border.default}` }} />
+                            <DetailImageEditTab product={product} />
                         </div>
                     )}
                 </div>

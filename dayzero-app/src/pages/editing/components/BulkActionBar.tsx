@@ -64,26 +64,55 @@ export const BulkActionBar: React.FC<Props> = ({
                 {selectedCount}개 선택됨
             </span>
 
-            <button
-                onClick={onTranslate}
-                disabled={translateCount === 0}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing['2'],
-                    padding: `${spacing['2']} ${spacing['4']}`,
-                    background: translateCount > 0 ? colors.primary : 'rgba(255,255,255,0.1)',
-                    color: translateCount > 0 ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
-                    border: 'none',
-                    borderRadius: radius.md,
-                    fontSize: font.size.md,
-                    fontWeight: 600,
-                    cursor: translateCount > 0 ? 'pointer' : 'default',
-                }}
+            <div
+                style={{ position: 'relative' }}
+                onMouseEnter={e => { if (translateCount === 0 && selectedCount > 0) (e.currentTarget.querySelector('[data-bulk-tip]') as HTMLElement)?.style.setProperty('display', 'block'); }}
+                onMouseLeave={e => { (e.currentTarget.querySelector('[data-bulk-tip]') as HTMLElement)?.style.setProperty('display', 'none'); }}
             >
-                <Languages size={16} />
-                AI 번역 ({translateCount})
-            </button>
+                <button
+                    onClick={onTranslate}
+                    disabled={translateCount === 0}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: spacing['2'],
+                        padding: `${spacing['2']} ${spacing['4']}`,
+                        background: translateCount > 0 ? colors.primary : 'rgba(255,255,255,0.1)',
+                        color: translateCount > 0 ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+                        border: 'none',
+                        borderRadius: radius.md,
+                        fontSize: font.size.md,
+                        fontWeight: 600,
+                        cursor: translateCount > 0 ? 'pointer' : 'default',
+                    }}
+                >
+                    <Languages size={16} />
+                    AI 편집 ({translateCount})
+                </button>
+                {translateCount === 0 && selectedCount > 0 && (
+                    <div data-bulk-tip="" style={{
+                        display: 'none',
+                        position: 'absolute', bottom: 'calc(100% + 14px)',
+                        left: '50%',
+                        pointerEvents: 'none', zIndex: zIndex.dropdown,
+                    }}>
+                        <div style={{
+                            position: 'relative', left: '-50%',
+                            background: colors.text.primary, color: '#fff',
+                            fontSize: font.size.xs, fontWeight: 500,
+                            padding: '5px 10px',
+                            borderRadius: radius.md, whiteSpace: 'nowrap',
+                            animation: 'tooltipFadeIn 0.15s ease',
+                        }}>
+                            선택한 상품은 이미 작성이 완료되었습니다
+                            <div style={{
+                                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                                border: '5px solid transparent', borderTopColor: colors.text.primary,
+                            }} />
+                        </div>
+                    </div>
+                )}
+            </div>
 
             <button
                 onClick={onRegister}

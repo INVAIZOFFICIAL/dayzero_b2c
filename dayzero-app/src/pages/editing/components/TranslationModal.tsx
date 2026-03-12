@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, selectedCount, alreadyTranslatedCount }) => {
-    const [targets, setTargets] = useState<('title' | 'description' | 'options')[]>(['title', 'description', 'options']);
+    const [targets, setTargets] = useState<('title' | 'description' | 'options')[]>(['title', 'options', 'description']);
 
     if (!isOpen) return null;
 
@@ -35,8 +35,8 @@ export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, se
                 </button>
 
                 <div style={{ marginBottom: spacing['5'] }}>
-                    <h2 style={{ fontSize: font.size.lg, fontWeight: 700, marginBottom: spacing['1'] }}>AI 번역 설정</h2>
-                    <p style={{ fontSize: font.size.sm, color: colors.text.tertiary }}>시작 버튼을 누르면 번역이 시작됩니다. ({selectedCount}건)</p>
+                    <h2 style={{ fontSize: font.size.lg, fontWeight: 700, marginBottom: spacing['1'] }}>AI 편집 설정</h2>
+                    <p style={{ fontSize: font.size.sm, color: colors.text.tertiary }}>시작 버튼을 누르면 AI 편집이 시작됩니다. ({selectedCount}건)</p>
                 </div>
 
                 {alreadyTranslatedCount > 0 && (
@@ -48,13 +48,13 @@ export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, se
                     }}>
                         <AlertCircle size={16} color={colors.warningIcon} style={{ flexShrink: 0, marginTop: '1px' }} />
                         <p style={{ fontSize: font.size.sm, color: colors.warningTextDark, lineHeight: '1.5' }}>
-                            선택된 상품 중 <strong>{alreadyTranslatedCount}건</strong>은 이미 번역된 상품입니다.<br />계속하면 재번역됩니다.
+                            선택된 상품 중 <strong>{alreadyTranslatedCount}건</strong>은 이미 편집된 상품입니다.<br />계속하면 재편집됩니다.
                         </p>
                     </div>
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['3'], marginBottom: spacing['6'] }}>
-                    {(['title', 'description', 'options'] as const).map(t => (
+                    {(['title', 'options', 'description'] as const).map(t => (
                         <div
                             key={t}
                             onClick={() => toggleTarget(t)}
@@ -75,7 +75,7 @@ export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, se
                                 {targets.includes(t) && <Check size={14} color="#fff" />}
                             </div>
                             <span style={{ fontSize: font.size.md, fontWeight: 600 }}>
-                                {t === 'title' ? '상품명 번역' : t === 'description' ? '상세설명 번역' : '옵션 번역'}
+                                {t === 'title' ? '상품명 번역' : t === 'description' ? '상세설명 작성 및 번역' : '옵션 번역'}
                             </span>
                         </div>
                     ))}
@@ -93,7 +93,7 @@ export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, se
                     }}
                 >
                     <Languages size={18} />
-                    AI 번역 시작
+                    AI 편집 시작
                 </button>
             </div>
         </div>

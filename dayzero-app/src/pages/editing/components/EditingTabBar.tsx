@@ -1,11 +1,11 @@
 import { colors, font, spacing } from '../../../design/tokens';
 
-export type DetailTab = 'basic' | 'price' | 'thumbnail';
+export type DetailTab = 'basic' | 'price' | 'images';
 
 const TABS: { key: DetailTab; label: string }[] = [
     { key: 'basic', label: '기본 정보' },
     { key: 'price', label: '가격 정보' },
-    { key: 'thumbnail', label: '썸네일/상세페이지' },
+    { key: 'images', label: '썸네일/상세페이지' },
 ];
 
 interface Props {

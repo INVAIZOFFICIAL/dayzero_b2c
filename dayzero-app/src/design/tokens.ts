@@ -16,9 +16,23 @@ export const colors = {
   primary: '#3182F6',
   /** 연한 파란색 배경. 선택된 필터·탭 배경 */
   primaryLight: '#EFF6FF',
+  /** 파란색 테두리. AI 버튼·선택 상태 테두리 */
+  primaryBorder: '#C7DCFD',
+  /** 파란색 호버 배경. 버튼 호버 */
+  primaryHover: '#DCEEFE',
+  /** 연한 파란색 테두리. 정보 카드 테두리 */
+  primaryLightBorder: '#BFDBFE',
 
   /** 성공. 활성 토글, 완료 상태 */
   success: '#00C853',
+  /** 연한 성공 배경. 완료 태그·뱃지 */
+  successLight: '#E8F5E9',
+  /** 성공 테두리. 수익 카드 테두리 */
+  successBorder: '#BBF0D4',
+  /** 아주 연한 성공 배경. 수익 카드 배경 */
+  successBg: '#F6FEF9',
+  /** 성공 강조. 수익/이익 금액 */
+  successDark: '#00884A',
   /** 성공 (대체). 수익/상승 지표 */
   successAlt: '#3ED4A4',
 
@@ -84,6 +98,10 @@ export const font = {
     mono: "'JetBrains Mono', monospace",
   },
   size: {
+    /** 10px – 아주 작은 캡션, 뱃지 숫자 */
+    '2xs': '10px',
+    /** 11px – 작은 태그, 보조 뱃지 */
+    '2xs+': '11px',
     /** 12px – 태그, 캡션 */
     xs: '12px',
     /** 13px – 보조 텍스트, 메타 */

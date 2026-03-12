@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 
-export type ForwarderValue = 'qx' | 'rincos' | 'other' | '';
+export type ForwarderValue = 'qx' | 'rincos' | 'kse' | 'other' | '';
 
 interface OnboardingState {
     apiKey: string;

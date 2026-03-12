@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, Globe, Sparkles } from 'lucide-react';
 import type { ProductDetail } from '../../../types/editing';
 import { getProviderLogo } from '../../../types/sourcing';
 import { Checkbox } from '../../../components/common/Checkbox';
+import { SOURCE_TAG_STYLES } from '../../../components/common/SourceTag';
 import { toKoCategory, shortKoCategory, EXCHANGE_RATE } from '../../../mock/categoryMap';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
+import { stripPrefix } from '../../../utils/editing';
 
 const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -28,8 +30,6 @@ interface TooltipData {
     content: React.ReactNode;
 }
 
-
-const stripPrefix = (title: string) => title.replace(/^\[[^\]]+\]\s*/, '');
 
 /** 화면 고정 위치 툴팁 */
 const FloatingTooltip: React.FC<{ data: TooltipData }> = ({ data }) => {
@@ -76,32 +76,31 @@ const FloatingTooltip: React.FC<{ data: TooltipData }> = ({ data }) => {
     );
 };
 
+
+const SOURCE_TOOLTIPS: Record<string, string> = {
+    ai: '상품 무게 정보가 없어 AI가 예측한 무게입니다.',
+    crawled: '실제 상품 페이지에서 수집한 무게 정보입니다.',
+    manual: '직접 입력한 무게입니다.',
+};
+
 const WeightSection: React.FC<{
     product: ProductDetail,
     onUpdateTooltip: (data: TooltipData | null) => void
 }> = ({ product, onUpdateTooltip }) => {
     const hasWeight = product.weightKg > 0;
-    const isAi = product.isWeightEstimated;
+    const source = product.weightSource ?? (product.isWeightEstimated ? 'ai' : 'crawled');
+    const tag = SOURCE_TAG_STYLES[source];
 
     const tooltipContent = (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {isAi && (
+            {tag && (
                 <div style={{
-                    fontSize: '11px',
-                    background: colors.primary,
-                    color: '#fff',
-                    padding: '2px 5px',
-                    borderRadius: '4px',
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    flexShrink: 0
-                }}>AI</div>
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    background: tag.bg, color: tag.color,
+                    padding: '3px 5px', borderRadius: '4px', lineHeight: 1, flexShrink: 0,
+                }}>{source === 'ai' ? <Sparkles size={10} /> : <Globe size={10} />}</div>
             )}
-            <span>
-                {isAi
-                    ? "상품 무게 정보가 없어 AI가 예측한 무게입니다."
-                    : "실제 상품 페이지에서 수집한 무게 정보입니다."}
-            </span>
+            <span>{SOURCE_TOOLTIPS[source] ?? ''}</span>
         </div>
     );
 
@@ -112,7 +111,7 @@ const WeightSection: React.FC<{
         >
             <div
                 style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
+                    display: 'flex', alignItems: 'center', gap: '5px',
                     fontSize: font.size.base,
                     fontWeight: 700,
                     color: hasWeight ? colors.text.primary : colors.danger,
@@ -130,24 +129,18 @@ const WeightSection: React.FC<{
                 onMouseLeave={() => onUpdateTooltip(null)}
             >
                 {hasWeight ? (
-                    <span>{product.weightKg}<span style={{ fontSize: '11px', marginLeft: '2px', opacity: 0.6, fontWeight: 500 }}>kg</span></span>
+                    <span>{product.weightKg}<span style={{ fontSize: font.size['2xs+'], marginLeft: '2px', opacity: 0.6, fontWeight: 500 }}>kg</span></span>
                 ) : (
                     <span style={{ fontSize: '12px', fontWeight: 600 }}>무게 설정 필요</span>
                 )}
 
-                {isAi && (
-                    <div
-                        style={{
-                            fontSize: '9px',
-                            background: colors.primary,
-                            color: '#fff',
-                            padding: '1px 3px',
-                            borderRadius: '3px',
-                            fontWeight: 800,
-                            lineHeight: 1,
-                            letterSpacing: '-0.5px'
-                        }}
-                    >AI</div>
+                {tag && (
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        background: tag.bg, color: tag.color,
+                        padding: '2px 4px', borderRadius: '3px',
+                        lineHeight: 1,
+                    }}>{source === 'ai' ? <Sparkles size={9} /> : <Globe size={9} />}</div>
                 )}
             </div>
         </div>
@@ -161,9 +154,9 @@ export const ProductListItem: React.FC<Props> = ({
     const [imgError, setImgError] = useState(false);
 
     const isProcessing = product.translationStatus === 'processing' || !!product.isReTranslating;
-    const isTranslated = product.translationStatus === 'completed' && !!product.titleJa;
-    const displayTitle = isTranslated
-        ? stripPrefix(product.titleJa!)
+    const isTranslated = !!product.titleJa;
+    const displayTitle = product.titleJa
+        ? stripPrefix(product.titleJa)
         : stripPrefix(product.titleKo);
 
     // 한화 환산 계산
@@ -230,80 +223,116 @@ export const ProductListItem: React.FC<Props> = ({
                 />
             )}
 
-            {/* 상품명 */}
-            <div
-                style={{ flex: 2.5, minWidth: 0, display: 'flex', alignItems: 'center', gap: spacing['2'] }}
-                onMouseMove={isTranslated ? (e) => showTooltip(e, (
-                    <div>
-                        <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>
-                            한국어 원문
+            {/* 상품명 + 상태 태그 */}
+            <div style={{ flex: 3, minWidth: 0 }}>
+                <div
+                    style={{ display: 'flex', alignItems: 'center', gap: spacing['2'] }}
+                    onMouseMove={isTranslated ? (e) => showTooltip(e, (
+                        <div>
+                            <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>
+                                한국어 원문
+                            </div>
+                            <div style={{ fontSize: font.size.md, fontWeight: 600, lineHeight: '1.4' }}>
+                                {stripPrefix(product.titleKo)}
+                            </div>
                         </div>
-                        <div style={{ fontSize: font.size.md, fontWeight: 600, lineHeight: '1.4' }}>
-                            {stripPrefix(product.titleKo)}
-                        </div>
-                    </div>
-                )) : undefined}
-                onMouseLeave={isTranslated ? hideTooltip : undefined}
-            >
-                <img
-                    src={getProviderLogo(product.provider)} alt={product.provider}
-                    style={{ width: '18px', height: '18px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
-                />
-                {isProcessing ? (
-                    <span style={{
-                        fontSize: font.size.base, fontWeight: 600,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        background: `linear-gradient(90deg, ${colors.text.muted} 0%, ${colors.text.primary} 40%, ${colors.text.muted} 80%)`,
-                        backgroundSize: '200% 100%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        animation: 'shimmer 1.6s infinite',
-                    }}>
-                        {displayTitle}
-                    </span>
-                ) : (
-                    <span
-                        key={product.translationStatus}
-                        style={{
-                            fontSize: font.size.base, fontWeight: 600, color: colors.text.primary,
+                    )) : undefined}
+                    onMouseLeave={isTranslated ? hideTooltip : undefined}
+                >
+                    <img
+                        src={getProviderLogo(product.provider)} alt={product.provider}
+                        style={{ width: '18px', height: '18px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                    {isProcessing ? (
+                        <span style={{
+                            fontSize: font.size.base, fontWeight: 600,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            textDecoration: isTranslated ? 'underline' : 'none',
-                            textDecorationStyle: 'dotted',
-                            textUnderlineOffset: '3px',
-                            textDecorationColor: colors.text.muted,
-                            animation: product.translationStatus === 'completed' && isTranslated ? 'fadeInUp 0.5s ease' : 'none',
-                        }}
-                    >
-                        {displayTitle}
-                    </span>
-                )}
-                {isProcessing && (
-                    <span style={{
-                        flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px',
-                        padding: '3px 8px', borderRadius: radius.xs,
-                        fontSize: font.size.xs, fontWeight: 600,
-                        background: colors.primaryLight, color: colors.primary,
-                        whiteSpace: 'nowrap',
-                    }}>
-                        <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
-                        AI 번역 중
-                    </span>
-                )}
-                {product.translationStatus === 'failed' && (
-                    <span style={{
-                        flexShrink: 0, padding: '2px 7px', borderRadius: radius.xs,
-                        fontSize: font.size.xs, fontWeight: 600,
-                        background: colors.dangerLight, color: colors.danger,
-                    }}>
-                        번역 실패
-                    </span>
-                )}
+                            background: `linear-gradient(90deg, ${colors.text.muted} 0%, ${colors.text.primary} 40%, ${colors.text.muted} 80%)`,
+                            backgroundSize: '200% 100%',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            animation: 'shimmer 1.6s infinite',
+                        }}>
+                            {displayTitle}
+                        </span>
+                    ) : (
+                        <span
+                            key={product.translationStatus}
+                            style={{
+                                fontSize: font.size.base, fontWeight: 600, color: colors.text.primary,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                textDecoration: isTranslated ? 'underline' : 'none',
+                                textDecorationStyle: 'dotted',
+                                textUnderlineOffset: '3px',
+                                textDecorationColor: colors.text.muted,
+                                animation: product.translationStatus === 'completed' && isTranslated ? 'fadeInUp 0.5s ease' : 'none',
+                            }}
+                        >
+                            {displayTitle}
+                        </span>
+                    )}
+                    {isProcessing && (
+                        <span style={{
+                            flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px',
+                            padding: '3px 8px', borderRadius: radius.xs,
+                            fontSize: font.size.xs, fontWeight: 600,
+                            background: colors.primaryLight, color: colors.primary,
+                            whiteSpace: 'nowrap',
+                        }}>
+                            <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                            AI 편집 중
+                        </span>
+                    )}
+                    {product.translationStatus === 'failed' && (
+                        <span style={{
+                            flexShrink: 0, padding: '2px 7px', borderRadius: radius.xs,
+                            fontSize: font.size.xs, fontWeight: 600,
+                            background: colors.dangerLight, color: colors.danger,
+                        }}>
+                            번역 실패
+                        </span>
+                    )}
+                </div>
+                {/* 번역/작성 상태 태그 */}
+                {(() => {
+                    const titleDone = !!product.titleJa;
+                    const optionsDone = product.options.length > 0 && product.options.every(o => !!o.nameJa);
+                    const descDone = !!product.descriptionJa;
+                    const _allDone = titleDone && optionsDone && descDone;
+                    const tags: { label: string; done: boolean }[] = [
+                        { label: '상품명', done: titleDone },
+                        { label: '옵션', done: optionsDone },
+                        { label: '상세설명', done: descDone },
+                    ];
+                    return (
+                        <div style={{ display: 'flex', gap: '4px', marginTop: '5px', paddingLeft: '26px' }}>
+                            {tags.map(tag => (
+                                <span
+                                    key={tag.label}
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '2px',
+                                        padding: '1px 6px',
+                                        borderRadius: radius.full,
+                                        fontSize: font.size['2xs+'],
+                                        fontWeight: 600,
+                                        background: tag.done ? colors.successLight : colors.bg.subtle,
+                                        color: tag.done ? colors.success : colors.text.muted,
+                                        lineHeight: '1.6',
+                                    }}
+                                >
+                                    {tag.done && <Check size={9} strokeWidth={3} />}
+                                    {tag.label}
+                                </span>
+                            ))}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* 카테고리 */}
             <div
-                style={{ flex: 1.8, minWidth: 0 }}
+                style={{ flex: 1.3, minWidth: 0 }}
                 onMouseMove={(e) => showTooltip(e, (
                     <div>
                         <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>

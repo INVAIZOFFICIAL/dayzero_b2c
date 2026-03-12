@@ -14,11 +14,12 @@ import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { Checkbox } from '../../components/common/Checkbox';
 import { colors, font, radius, spacing } from '../../design/tokens';
 import { calculateIntlShippingKrw } from '../../utils/shipping';
+import { isFullyTranslated } from '../../utils/editing';
 
 const TAB_LABELS: { key: EditTabFilter; label: string }[] = [
     { key: 'all', label: '전체' },
-    { key: 'needs_translation', label: '번역 필요' },
-    { key: 'translated', label: '번역 완료' },
+    { key: 'needs_translation', label: '편집 필요' },
+    { key: 'translated', label: '작성 완료' },
 ];
 
 type SortKey = 'createdAt' | 'salePriceJpy' | 'title';
@@ -131,17 +132,17 @@ export default function EditingListPage() {
         }
     }, [products.length, onboardingState, updateProduct]);
 
-    // 탭별 건수 (providerFilter 무관하게 계산)
+    // 탭별 건수 (providerFilter 무관하게 계산) — 상품명·옵션·상세설명 모두 완료 기준
     const counts = useMemo(() => ({
         all: products.length,
-        needs_translation: products.filter((p) => ['pending', 'failed', 'processing'].includes(p.translationStatus)).length,
-        translated: products.filter((p) => p.translationStatus === 'completed').length,
+        needs_translation: products.filter((p) => !isFullyTranslated(p)).length,
+        translated: products.filter((p) => isFullyTranslated(p)).length,
     }), [products]);
 
-    // 탭 기준 필터링 (소싱처 필터 전)
+    // 탭 기준 필터링 (소싱처 필터 전) — 완전 번역 완료 여부 기준
     const tabFiltered = useMemo(() => products.filter((p) => {
-        if (activeTab === 'needs_translation') return ['pending', 'failed', 'processing'].includes(p.translationStatus);
-        if (activeTab === 'translated') return p.translationStatus === 'completed';
+        if (activeTab === 'needs_translation') return !isFullyTranslated(p);
+        if (activeTab === 'translated') return isFullyTranslated(p);
         return true;
     }), [products, activeTab]);
 
@@ -168,13 +169,20 @@ export default function EditingListPage() {
 
     const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedProductIds.includes(p.id));
 
+    // 선택된 상품 중 아직 편집 필요한 상품만 카운트 (전부 완료면 번역 버튼 비활성화)
     const selectedTranslateCount = useMemo(() =>
-        products.filter((p) => selectedProductIds.includes(p.id) && ['pending', 'failed', 'completed'].includes(p.translationStatus)).length,
+        products.filter((p) => selectedProductIds.includes(p.id) && !isFullyTranslated(p)).length,
         [products, selectedProductIds]
     );
 
     const selectedTranslatedIds = useMemo(() =>
-        products.filter(p => selectedProductIds.includes(p.id) && p.translationStatus === 'completed').map(p => p.id),
+        products.filter(p =>
+            selectedProductIds.includes(p.id) &&
+            p.translationStatus === 'completed' &&
+            !!p.titleJa &&
+            !!p.descriptionJa &&
+            p.options.length > 0 && p.options.every(o => !!o.nameJa)
+        ).map(p => p.id),
         [products, selectedProductIds]
     );
     const selectedAlreadyTranslatedCount = selectedTranslatedIds.length;
@@ -277,8 +285,8 @@ export default function EditingListPage() {
                                 onClick={() => setProviderFilter(filter)}
                                 style={{
                                     padding: filter === '전체' ? '8px 16px' : (isActive ? '8px 16px' : '8px'),
-                                    borderRadius: '20px',
-                                    fontSize: '14px',
+                                    borderRadius: radius.full,
+                                    fontSize: font.size.md,
                                     fontWeight: isActive ? 600 : 500,
                                     color: isActive ? colors.primary : colors.text.tertiary,
                                     background: isActive ? colors.primaryLight : colors.bg.surface,
@@ -327,8 +335,8 @@ export default function EditingListPage() {
             }}>
                 <Checkbox checked={allFilteredSelected} onClick={handleSelectAll} />
                 <div style={{ width: '48px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>이미지</div>
-                <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 2.5 }} />
-                <div style={{ flex: 1.8, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
+                <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 3 }} />
+                <div style={{ flex: 1.3, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
                 <div style={{ width: '70px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600, paddingLeft: '4px' }}>무게</div>
                 <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '90px', flexShrink: 0 }} />
                 <div style={{ width: '80px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>원가</div>

@@ -38,6 +38,7 @@ export interface ProductDetail {
 
     // 소싱 정보
     provider: string;
+    sourceUrl: string;
     thumbnailUrl: string;
     originalPriceKrw: number;
 
@@ -49,7 +50,9 @@ export interface ProductDetail {
     isRead: boolean;
     jobId?: string; // 소싱 작업 고유 ID (알림 연동용)
     weightKg: number;
-    isWeightEstimated: boolean;
+    isWeightEstimated: boolean; // deprecated — weightSource 사용
+    weightSource: 'crawled' | 'ai' | 'manual';
+    priceSource: 'crawled' | 'ai' | 'manual';
     isReTranslating?: boolean;
 }
 
@@ -74,6 +77,7 @@ export interface TranslationBatch {
     createdAt: string;
     completedAt?: string;
     isRead?: boolean;
+    label?: string;
 }
 
 export interface RegistrationBatch {

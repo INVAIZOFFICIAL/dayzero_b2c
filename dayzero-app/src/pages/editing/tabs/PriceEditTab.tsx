@@ -6,6 +6,7 @@ import { useOnboarding } from '../../../components/onboarding/OnboardingContext'
 import { EXCHANGE_RATE } from '../../../mock/categoryMap';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
+import { SourceTag } from '../../../components/common/SourceTag';
 
 interface Props {
     product: ProductDetail;
@@ -19,7 +20,7 @@ const flexBetween: React.CSSProperties = {
 const sectionBadgeStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     width: '20px', height: '20px',
-    background: colors.primary, color: '#fff', borderRadius: '50%',
+    background: colors.primary, color: '#fff', borderRadius: radius.full,
     fontSize: font.size.xs, fontWeight: 700,
     marginRight: '7px', flexShrink: 0,
 };
@@ -28,8 +29,8 @@ const costSummaryBadgeStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     width: '18px', height: '18px',
     background: '#fff', color: colors.primary,
-    border: `1.5px solid ${colors.primary}`, borderRadius: '50%',
-    fontSize: '10px', fontWeight: 700,
+    border: `1.5px solid ${colors.primary}`, borderRadius: radius.full,
+    fontSize: font.size['2xs'], fontWeight: 700,
 };
 
 const summaryRowStyle: React.CSSProperties = {
@@ -45,7 +46,7 @@ const calcRowStyle: React.CSSProperties = {
 };
 
 const subAmountStyle: React.CSSProperties = {
-    fontSize: '11px', color: colors.text.muted, marginTop: '1px',
+    fontSize: font.size['2xs+'], color: colors.text.muted, marginTop: '1px',
 };
 
 const KSE_RATES: [number, number][] = [
@@ -61,106 +62,23 @@ const lookupKseRate = (kg: number): number => {
 
 const QOO10_FEE_RATE = 0.108;
 
-// ── 섹션 레이블 (BasicEditTab과 동일 스타일) ──────────────────────────────
-const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <span style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.secondary }}>
-        {children}
-    </span>
-);
-
-// ── 행 구분선 (섹션 내부 행 사이) ─────────────────────────────────────────
-const Divider = () => (
-    <div style={{ height: '1px', background: colors.border.default }} />
-);
-
-// ── 섹션 구분선 (BasicEditTab과 동일: margin spacing[6]) ───────────────────
-const SectionDivider = () => (
-    <div style={{ height: '1px', background: colors.border.default, margin: `${spacing['6']} 0` }} />
-);
-
-// ── 인라인 편집 행 (클릭으로 바로 수정) ───────────────────────────────────
-const EditableRow: React.FC<{
-    label: string;
-    sub?: string;
-    value: number;
-    prefix: '₩' | '¥';
-    onChange: (v: number) => void;
-}> = ({ label, sub, value, prefix, onChange }) => {
-    const [editing, setEditing] = useState(false);
-    const [input, setInput] = useState(value);
-    const ref = useRef<HTMLInputElement>(null);
-
-    useEffect(() => { if (editing) ref.current?.select(); }, [editing]);
-    useEffect(() => { if (!editing) setInput(value); }, [value, editing]);
-
-    const commit = () => { onChange(input); setEditing(false); };
-
-    return (
-        <div
-            onClick={!editing ? () => { setInput(value); setEditing(true); } : undefined}
-            style={{
-                ...flexBetween,
-                padding: '13px 0', cursor: editing ? 'default' : 'pointer',
-            }}
-        >
-            <div>
-                <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>{label}</span>
-                {sub && <span style={{ fontSize: font.size.xs, color: colors.text.muted, marginLeft: '4px' }}>{sub}</span>}
-            </div>
-
-            {editing ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ fontSize: font.size.sm, color: colors.text.muted }}>{prefix}</span>
-                    <input
-                        ref={ref}
-                        type="number" min={0} value={input}
-                        onChange={e => setInput(Number(e.target.value))}
-                        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-                        onBlur={commit}
-                        className="price-input"
-                        style={{
-                            width: '90px', textAlign: 'right',
-                            padding: '0 0 3px', fontSize: font.size.sm, fontWeight: 600,
-                            color: colors.primary, background: 'transparent',
-                            border: 'none', borderBottom: `2px solid ${colors.primary}`,
-                            outline: 'none', fontFamily: 'inherit',
-                        }}
-                    />
-                </div>
-            ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary }}>
-                        {prefix}{value.toLocaleString()}
-                    </span>
-                    <Pencil size={10} color={colors.text.muted} />
-                </div>
-            )}
-        </div>
-    );
+const SOURCE_TOOLTIPS: Record<string, string> = {
+    ai_weight: '상품 무게 정보가 없어 AI가 예측한 무게입니다.',
+    crawled_weight: '실제 상품 페이지에서 수집한 무게 정보입니다.',
+    ai_price: '상품 가격 정보가 없어 AI가 예측한 가격입니다.',
+    crawled_price: '실제 상품 페이지에서 수집한 가격 정보입니다.',
+    crawled_domestic: '실제 상품 페이지에서 수집한 배송비입니다.',
 };
 
-// ── 읽기 전용 행 ────────────────────────────────────────────────────────────
-const ReadRow: React.FC<{
-    label: string;
-    sub?: string;
-    value: React.ReactNode;
-    valueStyle?: React.CSSProperties;
-}> = ({ label, sub, value, valueStyle }) => (
-    <div style={{ ...flexBetween, padding: '13px 0' }}>
-        <div>
-            <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>{label}</span>
-            {sub && <span style={{ fontSize: font.size.xs, color: colors.text.muted, marginLeft: '4px' }}>{sub}</span>}
-        </div>
-        <span style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary, ...valueStyle }}>
-            {value}
-        </span>
-    </div>
-);
-
-// ── 무게 floating 툴팁 ─────────────────────────────────────────────────────
-const WeightTooltip: React.FC<{ pos: { x: number; y: number }; isAi: boolean }> = ({ pos, isAi }) => {
+// ── 플로팅 툴팁 ─────────────────────────────────────────────────────────────
+const FloatingTooltip: React.FC<{
+    pos: { x: number; y: number };
+    source: 'crawled' | 'ai';
+    tooltipKey: string;
+}> = ({ pos, source, tooltipKey }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [adjusted, setAdjusted] = useState(pos);
+    const text = SOURCE_TOOLTIPS[tooltipKey] ?? '';
 
     useEffect(() => {
         if (!ref.current) return;
@@ -169,9 +87,11 @@ const WeightTooltip: React.FC<{ pos: { x: number; y: number }; isAi: boolean }> 
         let x = pos.x, y = pos.y + 12;
         if (x + width > vw - 16) x = vw - width - 16;
         if (y + height > window.innerHeight - 16) y = pos.y - height - 12;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAdjusted({ x, y });
     }, [pos.x, pos.y]);
 
+    if (!text) return null;
     return (
         <div ref={ref} style={{
             position: 'fixed', left: adjusted.x, top: adjusted.y, zIndex: zIndex.toast,
@@ -180,14 +100,122 @@ const WeightTooltip: React.FC<{ pos: { x: number; y: number }; isAi: boolean }> 
             boxShadow: shadow.lg, pointerEvents: 'none', maxWidth: '340px', fontSize: font.size.sm,
             animation: 'koIn 0.12s ease',
         }}>
-            {isAi ? (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 800, background: colors.primary, color: '#fff', padding: '2px 4px', borderRadius: radius.xs, flexShrink: 0, marginTop: '2px' }}>AI</span>
-                    <span style={{ lineHeight: 1.6 }}>상품 무게 정보가 없어 AI가 예측한 무게입니다.<br />실제보다 낮으면 배송비가 추가될 수 있어 여유롭게 설정했습니다.</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <SourceTag source={source} />
+                <span style={{ lineHeight: 1.6 }}>{text}</span>
+            </div>
+        </div>
+    );
+};
+
+// ── 섹션 레이블 ─────────────────────────────────────────────────────────────
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <span style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.secondary }}>
+        {children}
+    </span>
+);
+
+const Divider = () => (
+    <div style={{ height: '1px', background: colors.border.default }} />
+);
+
+const SectionDivider = () => (
+    <div style={{ height: '1px', background: colors.border.default, margin: `${spacing['6']} 0` }} />
+);
+
+type EditingField = null | 'originalPrice' | 'domestic' | 'prep' | 'weight';
+
+// ── 비용 행 (읽기 모드 — 호버 시 연필, 태그 호버 시 툴팁) ──────────────────
+const CostRow: React.FC<{
+    label: string;
+    sub?: string;
+    value: number;
+    prefix?: string;
+    suffix?: string;
+    source?: 'crawled' | 'ai' | 'manual';
+    showTag?: boolean;
+    onClick: () => void;
+    onTooltipMove?: (pos: { x: number; y: number }) => void;
+    onTooltipLeave?: () => void;
+}> = ({ label, sub, value, prefix, suffix, source, showTag, onClick, onTooltipMove, onTooltipLeave }) => {
+    const [hovering, setHovering] = useState(false);
+    const hasTag = showTag && source && source !== 'manual';
+
+    return (
+        <div
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => { setHovering(false); onTooltipLeave?.(); }}
+            onMouseMove={hasTag && onTooltipMove ? (e) => onTooltipMove({ x: e.clientX, y: e.clientY }) : undefined}
+            onClick={onClick}
+            style={{ ...flexBetween, padding: '13px 0', cursor: 'pointer' }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing['1'] }}>
+                <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>{label}</span>
+                {sub && <span style={{ fontSize: font.size.xs, color: colors.text.muted, marginLeft: '2px' }}>{sub}</span>}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Pencil
+                    size={10} color={colors.text.muted}
+                    style={{ opacity: hovering ? 0.6 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+                />
+                {hasTag && <SourceTag source={source!} />}
+                <span style={{
+                    fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary,
+                    textDecoration: hasTag ? 'underline' : 'none',
+                    textDecorationStyle: 'dotted',
+                    textUnderlineOffset: '3px',
+                    textDecorationColor: colors.text.muted,
+                }}>
+                    {prefix ?? ''}{value.toLocaleString()}{suffix ?? ''}
+                </span>
+            </div>
+        </div>
+    );
+};
+
+// ── 비용 행 (편집 모드) ─────────────────────────────────────────────────────
+const CostEditRow: React.FC<{
+    label: string;
+    value: string;
+    prefix?: string;
+    suffix?: string;
+    hint?: string;
+    onChange: (v: string) => void;
+    onSave: () => void;
+    onCancel: () => void;
+}> = ({ label, value, prefix, suffix, hint, onChange, onSave, onCancel }) => {
+    const ref = useRef<HTMLInputElement>(null);
+    useEffect(() => { ref.current?.select(); }, []);
+
+    return (
+        <div style={{ padding: '12px 0' }}>
+            <div style={flexBetween}>
+                <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>{label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2'] }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        {prefix && <span style={{ fontSize: font.size.sm, color: colors.text.muted }}>{prefix}</span>}
+                        <input
+                            ref={ref}
+                            type="text" inputMode="decimal" className="price-input"
+                            value={value}
+                            onChange={e => onChange(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') onSave(); if (e.key === 'Escape') onCancel(); }}
+                            onFocus={e => e.target.select()}
+                            style={{
+                                width: '90px', textAlign: 'right',
+                                padding: '0 0 3px', fontSize: font.size.sm, fontWeight: 600,
+                                color: colors.primary, background: 'transparent',
+                                border: 'none', borderBottom: `2px solid ${colors.primary}`,
+                                outline: 'none', fontFamily: 'inherit',
+                            }}
+                        />
+                        {suffix && <span style={{ fontSize: font.size.xs, color: colors.text.muted }}>{suffix}</span>}
+                    </div>
+                    <button onClick={onSave} style={{ padding: '4px 12px', borderRadius: radius.md, background: colors.primary, border: 'none', fontSize: font.size.xs, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>저장</button>
+                    <button onClick={onCancel} style={{ padding: '4px 10px', borderRadius: radius.md, background: 'none', border: `1px solid ${colors.border.default}`, fontSize: font.size.xs, color: colors.text.secondary, cursor: 'pointer' }}>취소</button>
                 </div>
-            ) : (
-                <span>실제 상품 페이지에서 수집한 무게 정보입니다.</span>
-            )}
+            </div>
+            {hint && <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginTop: '6px' }}>{hint}</div>}
         </div>
     );
 };
@@ -199,47 +227,76 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
 
     const defaultMarginRate = onboarding.marginType === '%' ? onboarding.marginValue : 30;
 
+    const initDomestic = onboarding.domesticShipping;
+    const initPrep = onboarding.prepCost;
+    const initIntl = onboarding.intlShipping > 0 ? onboarding.intlShipping : lookupKseRate(product.weightKg);
+
+    const calcPrice = (origPrice: number, margin: number, domestic: number, prep: number, intl: number) => {
+        const total = (origPrice + domestic + prep) / EXCHANGE_RATE + intl;
+        return Math.round(total * (1 + margin / 100) / 10) * 10;
+    };
+
+    // ── 로컬 상태 ─────────────────────────────────────────────────────────
+    const [originalPrice, setOriginalPrice] = useState(product.originalPriceKrw);
     const [marginRate, setMarginRate] = useState(defaultMarginRate);
-    const [domesticShipping, setDomesticShipping] = useState(onboarding.domesticShipping);
-    const [prepCost, setPrepCost] = useState(onboarding.prepCost);
-    const [intlShipping, setIntlShipping] = useState(
-        onboarding.intlShipping > 0 ? onboarding.intlShipping : lookupKseRate(product.weightKg)
-    );
+    const [domesticShipping, setDomesticShipping] = useState(initDomestic);
+    const [prepCost, setPrepCost] = useState(initPrep);
+    const [intlShipping, setIntlShipping] = useState(initIntl);
     const [weight, setWeight] = useState(product.weightKg);
-    const [salePriceJpy, setSalePriceJpy] = useState(product.salePriceJpy);
+    const [salePriceJpy, setSalePriceJpy] = useState(
+        calcPrice(product.originalPriceKrw, defaultMarginRate, initDomestic, initPrep, initIntl)
+    );
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-    const [weightTooltipPos, setWeightTooltipPos] = useState<{ x: number; y: number } | null>(null);
-    const [showWeightConfirm, setShowWeightConfirm] = useState(false);
-    const [isEditingWeight, setIsEditingWeight] = useState(false);
-    const [weightInput, setWeightInput] = useState(String(product.weightKg));
+    // 편집 상태
+    const [editingField, setEditingField] = useState<EditingField>(null);
+    const [editInput, setEditInput] = useState('');
+    const [confirmField, setConfirmField] = useState<EditingField>(null);
+
+    // 사용자 수정 추적 (태그 제거용)
+    const [isPriceUserEdited, setIsPriceUserEdited] = useState(false);
+    const [isDomesticUserEdited, setIsDomesticUserEdited] = useState(false);
     const [isWeightUserEdited, setIsWeightUserEdited] = useState(false);
-    const weightInputRef = useRef<HTMLInputElement>(null);
+
+    // 호버 툴팁
+    const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+    const [tooltipKey, setTooltipKey] = useState('');
+    const [tooltipSource, setTooltipSource] = useState<'ai' | 'crawled'>('crawled');
+
+    const showTooltip = useCallback((source: 'ai' | 'crawled', key: string) => (pos: { x: number; y: number }) => {
+        setTooltipPos(pos);
+        setTooltipSource(source);
+        setTooltipKey(key);
+    }, []);
+    const hideTooltip = useCallback(() => setTooltipPos(null), []);
 
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const priceRef = useRef(salePriceJpy);
     priceRef.current = salePriceJpy;
 
+    // 상품 전환 시 초기화
     useEffect(() => {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         if (savedTimer.current) clearTimeout(savedTimer.current);
-        setSalePriceJpy(product.salePriceJpy);
+        const newDomestic = onboarding.domesticShipping;
+        const newPrep = onboarding.prepCost;
+        const newIntl = onboarding.intlShipping > 0 ? onboarding.intlShipping : lookupKseRate(product.weightKg);
+        setOriginalPrice(product.originalPriceKrw);
+        setDomesticShipping(newDomestic);
+        setPrepCost(newPrep);
+        setIntlShipping(newIntl);
         setMarginRate(defaultMarginRate);
-        setDomesticShipping(onboarding.domesticShipping);
-        setPrepCost(onboarding.prepCost);
-        setIntlShipping(onboarding.intlShipping > 0 ? onboarding.intlShipping : lookupKseRate(product.weightKg));
+        setSalePriceJpy(calcPrice(product.originalPriceKrw, defaultMarginRate, newDomestic, newPrep, newIntl));
         setWeight(product.weightKg);
-        setWeightInput(String(product.weightKg));
+        setIsPriceUserEdited(false);
+        setIsDomesticUserEdited(false);
         setIsWeightUserEdited(false);
         setSaveStatus('idle');
-        setIsEditingWeight(false);
+        setEditingField(null);
+        setConfirmField(null);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [product.id]);
-
-    useEffect(() => {
-        if (isEditingWeight) weightInputRef.current?.focus();
-    }, [isEditingWeight]);
 
     useEffect(() => {
         return () => {
@@ -260,31 +317,79 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
     }, [product.id, updateProduct]);
 
     // ── 계산 ──────────────────────────────────────────────────────────────
-    const totalCostKrw = product.originalPriceKrw + domesticShipping + prepCost;
+    const totalCostKrw = originalPrice + domesticShipping + prepCost;
     const costJpy = totalCostKrw / EXCHANGE_RATE;
     const totalCostJpy = costJpy + intlShipping;
 
-    const recalcPrice = (margin: number, domestic: number, prep: number, intl: number) => {
-        const total = (product.originalPriceKrw + domestic + prep) / EXCHANGE_RATE + intl;
-        const newPrice = Math.round(total * (1 + margin / 100) / 10) * 10;
+    const recalcPrice = (origP: number, margin: number, domestic: number, prep: number, intl: number) => {
+        const newPrice = calcPrice(origP, margin, domestic, prep, intl);
         setSalePriceJpy(newPrice > 0 ? newPrice : 0);
         priceRef.current = newPrice > 0 ? newPrice : 0;
         triggerSave();
     };
 
-    const handleMarginChange = (v: number) => { setMarginRate(v); recalcPrice(v, domesticShipping, prepCost, intlShipping); };
-    const handleDomesticChange = (v: number) => { setDomesticShipping(v); recalcPrice(marginRate, v, prepCost, intlShipping); };
-    const handlePrepChange = (v: number) => { setPrepCost(v); recalcPrice(marginRate, domesticShipping, v, intlShipping); };
+    // ── 행 클릭 핸들러 ─────────────────────────────────────────────────────
+    const handleRowClick = (field: EditingField) => {
+        if (editingField) return; // 이미 편집 중이면 무시
+        const needsConfirm =
+            (field === 'originalPrice' && !isPriceUserEdited && product.priceSource !== 'manual') ||
+            (field === 'domestic' && !isDomesticUserEdited) ||
+            (field === 'weight' && !isWeightUserEdited && product.weightSource !== 'manual');
 
-    const handleWeightSave = () => {
-        const numWeight = parseFloat(weightInput) || 0;
+        if (needsConfirm) {
+            setConfirmField(field);
+        } else {
+            startEditing(field);
+        }
+    };
+
+    const startEditing = (field: EditingField) => {
+        if (field === 'originalPrice') setEditInput(String(originalPrice));
+        else if (field === 'domestic') setEditInput(String(domesticShipping));
+        else if (field === 'prep') setEditInput(String(prepCost));
+        else if (field === 'weight') setEditInput(String(weight));
+        setEditingField(field);
+    };
+
+    const cancelEditing = () => {
+        setEditingField(null);
+        setEditInput('');
+    };
+
+    // ── 저장 핸들러 ────────────────────────────────────────────────────────
+    const handleSaveOriginalPrice = () => {
+        const v = Number(editInput) || 0;
+        setOriginalPrice(v);
+        setIsPriceUserEdited(true);
+        setEditingField(null);
+        updateProduct(product.id, { originalPriceKrw: v, priceSource: 'manual' });
+        recalcPrice(v, marginRate, domesticShipping, prepCost, intlShipping);
+    };
+
+    const handleSaveDomestic = () => {
+        const v = Number(editInput) || 0;
+        setDomesticShipping(v);
+        setIsDomesticUserEdited(true);
+        setEditingField(null);
+        recalcPrice(originalPrice, marginRate, v, prepCost, intlShipping);
+    };
+
+    const handleSavePrep = () => {
+        const v = Number(editInput) || 0;
+        setPrepCost(v);
+        setEditingField(null);
+        recalcPrice(originalPrice, marginRate, domesticShipping, v, intlShipping);
+    };
+
+    const handleSaveWeight = () => {
+        const numWeight = parseFloat(editInput) || 0;
         const newIntl = lookupKseRate(numWeight);
         setWeight(numWeight);
         setIsWeightUserEdited(true);
-        setIsEditingWeight(false);
+        setEditingField(null);
         setIntlShipping(newIntl);
-        updateProduct(product.id, { weightKg: numWeight });
-        recalcPrice(marginRate, domesticShipping, prepCost, newIntl);
+        updateProduct(product.id, { weightKg: numWeight, weightSource: 'manual' });
+        recalcPrice(originalPrice, marginRate, domesticShipping, prepCost, newIntl);
     };
 
     const handlePriceChange = (jpy: number) => {
@@ -294,6 +399,11 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
         triggerSave();
     };
 
+    const handleMarginChange = (v: number) => {
+        setMarginRate(v);
+        recalcPrice(originalPrice, v, domesticShipping, prepCost, intlShipping);
+    };
+
     // ── 수익 계산 ─────────────────────────────────────────────────────────
     const qoo10FeeJpy = Math.round(salePriceJpy * QOO10_FEE_RATE);
     const settlementJpy = salePriceJpy - qoo10FeeJpy;
@@ -301,6 +411,26 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
     const profitKrw = Math.round(profitJpy * EXCHANGE_RATE);
     const effectiveMarginPct = settlementJpy > 0 ? Math.round(profitJpy / settlementJpy * 100) : 0;
     const isProfit = profitKrw > 0;
+
+    // ── 확인 모달 내용 ───────────────────────────────────────────────────
+    const confirmConfig: Partial<Record<NonNullable<EditingField>, { title: string; description: string }>> = {
+        originalPrice: {
+            title: '소싱 원가를 수정할까요?',
+            description: product.priceSource === 'ai'
+                ? `AI가 예측한 가격이에요 (₩${originalPrice.toLocaleString()}).\n실제 가격과 다를 수 있으니 확인 후 수정하세요.`
+                : `실제 상품 사이트에서 수집한 가격이에요 (₩${originalPrice.toLocaleString()}).\n정말 수정하시겠어요?`,
+        },
+        domestic: {
+            title: '국내 배송비를 수정할까요?',
+            description: `소싱처에서 수집한 배송비에요 (₩${domesticShipping.toLocaleString()}).\n정말 수정하시겠어요?`,
+        },
+        weight: {
+            title: '무게를 수정할까요?',
+            description: product.weightSource === 'ai'
+                ? `AI가 예측한 무게예요 (${weight}kg).\n실제 무게와 다를 수 있으니 확인 후 수정하세요.\n수정하면 해외 배송비가 자동 재계산됩니다.`
+                : `소싱처에서 수집한 실제 무게예요 (${weight}kg).\n정말 수정하시겠어요? 수정하면 해외 배송비가 재계산됩니다.`,
+        },
+    };
 
     const priceInputBase: React.CSSProperties = {
         width: '100%', boxSizing: 'border-box',
@@ -321,7 +451,6 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                 .price-input::-webkit-outer-spin-button,
                 .price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
                 .price-input { -moz-appearance: textfield; }
-                .editable-row:hover { background: ${colors.bg.faint}; border-radius: ${radius.md}; }
             `}</style>
 
             {/* ── 원가 구조 ── */}
@@ -335,11 +464,74 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
 
             <div style={{ border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, overflow: 'hidden' }}>
                 <div style={{ padding: `0 ${spacing['4']}` }}>
-                    <ReadRow label="소싱 원가" value={`₩${product.originalPriceKrw.toLocaleString()}`} />
+                    {/* 소싱 원가 */}
+                    {editingField === 'originalPrice' ? (
+                        <CostEditRow
+                            label="소싱 원가"
+                            value={editInput}
+                            prefix="₩"
+                            onChange={setEditInput}
+                            onSave={handleSaveOriginalPrice}
+                            onCancel={cancelEditing}
+                        />
+                    ) : (
+                        <CostRow
+                            label="소싱 원가"
+                            value={originalPrice}
+                            prefix="₩"
+                            source={product.priceSource}
+                            showTag={!isPriceUserEdited}
+                            onClick={() => handleRowClick('originalPrice')}
+                            onTooltipMove={!isPriceUserEdited && product.priceSource !== 'manual' ? showTooltip(product.priceSource as 'ai' | 'crawled', `${product.priceSource}_price`) : undefined}
+                            onTooltipLeave={hideTooltip}
+                        />
+                    )}
                     <Divider />
-                    <EditableRow label="국내 배송비" sub="소싱처→집하센터" value={domesticShipping} prefix="₩" onChange={handleDomesticChange} />
+
+                    {/* 국내 배송비 */}
+                    {editingField === 'domestic' ? (
+                        <CostEditRow
+                            label="국내 배송비"
+                            value={editInput}
+                            prefix="₩"
+                            onChange={setEditInput}
+                            onSave={handleSaveDomestic}
+                            onCancel={cancelEditing}
+                        />
+                    ) : (
+                        <CostRow
+                            label="국내 배송비"
+                            sub="소싱처→집하센터"
+                            value={domesticShipping}
+                            prefix="₩"
+                            source="crawled"
+                            showTag={!isDomesticUserEdited}
+                            onClick={() => handleRowClick('domestic')}
+                            onTooltipMove={!isDomesticUserEdited ? showTooltip('crawled', 'crawled_domestic') : undefined}
+                            onTooltipLeave={hideTooltip}
+                        />
+                    )}
                     <Divider />
-                    <EditableRow label="작업비" sub="검수/포장" value={prepCost} prefix="₩" onChange={handlePrepChange} />
+
+                    {/* 작업비 */}
+                    {editingField === 'prep' ? (
+                        <CostEditRow
+                            label="작업비"
+                            value={editInput}
+                            prefix="₩"
+                            onChange={setEditInput}
+                            onSave={handleSavePrep}
+                            onCancel={cancelEditing}
+                        />
+                    ) : (
+                        <CostRow
+                            label="작업비"
+                            sub="검수/포장"
+                            value={prepCost}
+                            prefix="₩"
+                            onClick={() => handleRowClick('prep')}
+                        />
+                    )}
                 </div>
                 {/* 합계 행 */}
                 <div style={summaryRowStyle}>
@@ -348,7 +540,7 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                         <span style={{ fontSize: font.size.sm, fontWeight: 700, color: colors.text.primary }}>
                             ₩{totalCostKrw.toLocaleString()}
                         </span>
-                        <div style={{ fontSize: '11px', color: colors.text.muted, marginTop: '2px' }}>
+                        <div style={{ fontSize: font.size['2xs+'], color: colors.text.muted, marginTop: '2px' }}>
                             ¥{Math.round(costJpy).toLocaleString()} · 환율 ¥1=₩{EXCHANGE_RATE.toLocaleString()}
                         </div>
                     </div>
@@ -362,55 +554,28 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
 
             <div style={{ border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, overflow: 'hidden' }}>
                 <div style={{ padding: `0 ${spacing['4']}` }}>
-                    {isEditingWeight ? (
-                        <div style={{ padding: '12px 0' }}>
-                            <div style={flexBetween}>
-                                <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>상품 무게</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2'] }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                        <input
-                                            ref={weightInputRef}
-                                            type="text" inputMode="decimal" className="price-input"
-                                            value={weightInput}
-                                            onChange={e => setWeightInput(e.target.value)}
-                                            onKeyDown={e => { if (e.key === 'Enter') handleWeightSave(); if (e.key === 'Escape') setIsEditingWeight(false); }}
-                                            onFocus={e => e.target.select()}
-                                            style={{
-                                                width: '80px', textAlign: 'right',
-                                                padding: '0 0 3px', fontSize: font.size.sm, fontWeight: 600,
-                                                color: colors.primary, background: 'transparent',
-                                                border: 'none', borderBottom: `2px solid ${colors.primary}`,
-                                                outline: 'none', fontFamily: 'inherit',
-                                            }}
-                                        />
-                                        <span style={{ fontSize: font.size.xs, color: colors.text.muted }}>kg</span>
-                                    </div>
-                                    <button onClick={handleWeightSave} style={{ padding: `4px 12px`, borderRadius: radius.md, background: colors.primary, border: 'none', fontSize: font.size.xs, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>저장</button>
-                                    <button onClick={() => { setIsEditingWeight(false); setWeightInput(String(weight)); }} style={{ padding: `4px 10px`, borderRadius: radius.md, background: 'none', border: `1px solid ${colors.border.default}`, fontSize: font.size.xs, color: colors.text.secondary, cursor: 'pointer' }}>취소</button>
-                                </div>
-                            </div>
-                            <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginTop: '6px' }}>
-                                KSE(SAGAWA) 요금표 기준으로 해외 배송비가 자동 계산됩니다
-                            </div>
-                        </div>
+                    {/* 상품 무게 */}
+                    {editingField === 'weight' ? (
+                        <CostEditRow
+                            label="상품 무게"
+                            value={editInput}
+                            suffix="kg"
+                            hint="KSE(SAGAWA) 요금표 기준으로 해외 배송비가 자동 계산됩니다"
+                            onChange={setEditInput}
+                            onSave={handleSaveWeight}
+                            onCancel={cancelEditing}
+                        />
                     ) : (
-                        <div
-                            onClick={() => isWeightUserEdited ? setIsEditingWeight(true) : setShowWeightConfirm(true)}
-                            onMouseMove={e => setWeightTooltipPos({ x: e.clientX, y: e.clientY })}
-                            onMouseLeave={() => setWeightTooltipPos(null)}
-                            style={{ ...flexBetween, padding: '13px 0', cursor: 'pointer' }}
-                        >
-                            <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>상품 무게</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                {product.isWeightEstimated && !isWeightUserEdited && (
-                                    <span style={{ fontSize: '10px', fontWeight: 800, background: colors.primary, color: '#fff', padding: '2px 5px', borderRadius: radius.xs }}>AI</span>
-                                )}
-                                <span style={{ fontSize: font.size.sm, fontWeight: 600, color: colors.text.primary }}>
-                                    {weight}<span style={{ fontSize: font.size.xs, color: colors.text.muted, marginLeft: '2px' }}>kg</span>
-                                </span>
-                                <Pencil size={10} color={colors.text.muted} />
-                            </div>
-                        </div>
+                        <CostRow
+                            label="상품 무게"
+                            value={weight}
+                            suffix="kg"
+                            source={product.weightSource}
+                            showTag={!isWeightUserEdited}
+                            onClick={() => handleRowClick('weight')}
+                            onTooltipMove={!isWeightUserEdited && product.weightSource !== 'manual' ? showTooltip(product.weightSource as 'ai' | 'crawled', `${product.weightSource}_weight`) : undefined}
+                            onTooltipLeave={hideTooltip}
+                        />
                     )}
                 </div>
                 {/* 해외 배송비 합계 행 */}
@@ -429,7 +594,7 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                 padding: `${spacing['3']} ${spacing['4']}`,
                 background: colors.primaryLight,
                 borderRadius: radius.lg,
-                border: `1px solid #BFDBFE`,
+                border: `1px solid ${colors.primaryLightBorder}`,
                 marginTop: spacing['8'],
                 marginBottom: spacing['6'],
             }}>
@@ -461,9 +626,7 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                 <SectionLabel><span style={sectionBadgeStyle}>3</span>판매가 설정</SectionLabel>
             </div>
 
-            {/* 판매가 ↔ 마진율 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 120px', gap: spacing['3'], alignItems: 'start' }}>
-                {/* 판매가 (핵심, 왼쪽) */}
                 <div>
                     <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginBottom: spacing['2'] }}>
                         Qoo10 판매가
@@ -484,7 +647,6 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
 
                 <div style={{ paddingTop: '30px', color: colors.text.muted, fontSize: font.size.lg, userSelect: 'none' }}>↔</div>
 
-                {/* 마진율 (오른쪽) */}
                 <div>
                     <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginBottom: spacing['2'] }}>
                         마진율
@@ -514,11 +676,10 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
 
             <div style={{
                 borderRadius: radius.lg,
-                border: `1.5px solid ${isProfit ? '#BBF0D4' : colors.dangerLight}`,
-                background: isProfit ? '#F6FEF9' : colors.dangerBg,
+                border: `1.5px solid ${isProfit ? colors.successBorder : colors.dangerLight}`,
+                background: isProfit ? colors.successBg : colors.dangerBg,
                 overflow: 'hidden',
             }}>
-                {/* 계산 내역 */}
                 <div style={{ padding: `0 ${spacing['4']}` }}>
                     <div style={calcRowStyle}>
                         <span style={{ fontSize: font.size.sm, color: colors.text.secondary }}>판매가</span>
@@ -559,17 +720,16 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                     </div>
                 </div>
 
-                {/* 순이익 강조 영역 */}
                 <div style={{
                     ...flexBetween,
                     padding: `${spacing['4']} ${spacing['4']}`,
-                    background: isProfit ? '#EDFBF3' : colors.dangerLight,
-                    borderTop: `1px solid ${isProfit ? '#BBF0D4' : colors.dangerLight}`,
+                    background: isProfit ? colors.successLight : colors.dangerLight,
+                    borderTop: `1px solid ${isProfit ? colors.successBorder : colors.dangerLight}`,
                 }}>
                     <span style={{ fontSize: font.size.sm, fontWeight: 700, color: colors.text.primary }}>순이익 (건당)</span>
                     {isProfit ? (
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: font.size.base, fontWeight: 700, color: '#00884A', lineHeight: 1.2 }}>
+                            <div style={{ fontSize: font.size.base, fontWeight: 700, color: colors.successDark, lineHeight: 1.2 }}>
                                 +₩{profitKrw.toLocaleString()}
                             </div>
                             <div style={{ fontSize: font.size.xs, color: colors.text.muted, marginTop: '3px' }}>
@@ -589,24 +749,23 @@ export const PriceEditTab: React.FC<Props> = ({ product }) => {
                 </div>
             </div>
 
-            {/* 무게 수정 확인 모달 */}
-            <ConfirmModal
-                isOpen={showWeightConfirm}
-                onClose={() => setShowWeightConfirm(false)}
-                onConfirm={() => { setShowWeightConfirm(false); setIsEditingWeight(true); }}
-                title="무게를 수정할까요?"
-                description={
-                    product.isWeightEstimated
-                        ? `AI가 예측한 무게예요 (${weight}kg).\n실제 무게와 다를 수 있으니 확인 후 수정하세요.\n수정하면 해외 배송비가 자동 재계산됩니다.`
-                        : `소싱처에서 가져온 실제 무게예요 (${weight}kg).\n정말 수정하시겠어요? 수정하면 해외 배송비가 재계산됩니다.`
-                }
-                confirmText="수정하기"
-                cancelText="취소"
-                type="info"
-            />
+            {/* 확인 모달 (소싱원가 / 국내배송비 / 무게 공용) */}
+            {confirmField && confirmConfig[confirmField] && (
+                <ConfirmModal
+                    isOpen
+                    onClose={() => setConfirmField(null)}
+                    onConfirm={() => { const f = confirmField; setConfirmField(null); startEditing(f); }}
+                    title={confirmConfig[confirmField].title}
+                    description={confirmConfig[confirmField].description}
+                    confirmText="수정하기"
+                    cancelText="취소"
+                    type="info"
+                />
+            )}
 
-            {weightTooltipPos && !isEditingWeight && (
-                <WeightTooltip pos={weightTooltipPos} isAi={product.isWeightEstimated && !isWeightUserEdited} />
+            {/* 호버 툴팁 */}
+            {tooltipPos && editingField === null && (
+                <FloatingTooltip pos={tooltipPos} source={tooltipSource} tooltipKey={tooltipKey} />
             )}
         </div>
     );
