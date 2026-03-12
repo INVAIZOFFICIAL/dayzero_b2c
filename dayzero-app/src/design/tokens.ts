@@ -31,6 +31,14 @@ export const colors = {
 
   /** 경고 */
   warning: '#FBBC05',
+  /** 경고 배경 */
+  warningLight: '#FFFBEB',
+  /** 경고 테두리 */
+  warningBorder: '#FDE68A',
+  /** 경고 아이콘 */
+  warningIcon: '#D97706',
+  /** 경고 텍스트 */
+  warningTextDark: '#92400E',
 
   text: {
     /** 제목, 강조 텍스트 */

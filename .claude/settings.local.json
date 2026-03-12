@@ -7,7 +7,19 @@
       "Bash(npx tsc:*)",
       "Bash(grep -roh \"#[0-9A-Fa-f]\\\\{3,6\\\\}\" /Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app/src --include=\"*.tsx\" | sort | uniq -c | sort -rn | head -30)",
       "Bash(npx eslint:*)",
-      "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{3,6\\\\}\\\\|rgba\\(\" /Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app/src/pages/editing/ --include=\"*.tsx\" | grep -v \"node_modules\")"
+      "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{3,6\\\\}\\\\|rgba\\(\" /Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app/src/pages/editing/ --include=\"*.tsx\" | grep -v \"node_modules\")",
+      "Bash(for plugin:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/invaiz/Documents/develop/dayzero_B2C/$plugin/**)",
+      "Bash(done)",
+      "Bash(grep -o '\"skill\":[^,}]*' ~/.claude/history.jsonl 2>/dev/null | sort | uniq -c | sort -rn | head -20)",
+      "Bash(grep -o '/[a-z-]*' ~/.claude/history.jsonl 2>/dev/null | sort | uniq -c | sort -rn | head -20)",
+      "Bash(ls /Users/invaiz/Documents/develop/dayzero_B2C/.claude/skills/frontend-design/ && echo \"---\" && cat /Users/invaiz/Documents/develop/dayzero_B2C/.claude/skills/frontend-design/*.md 2>/dev/null || find /Users/invaiz/Documents/develop/dayzero_B2C/.claude/skills/frontend-design/ -type f | xargs cat)",
+      "WebSearch",
+      "WebFetch(domain:help.dsers.com)",
+      "WebFetch(domain:www.autods.com)",
+      "Bash(grep -rn \"from 'lucide-react'\" /Users/invaiz/Documents/develop/dayzero_B2C/dayzero-app/src/pages/editing/ 2>/dev/null)",
+      "mcp__plugin_oh-my-claudecode_t__lsp_diagnostics"
     ]
   }
 }

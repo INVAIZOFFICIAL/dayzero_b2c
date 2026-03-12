@@ -590,19 +590,10 @@ export const UrlSourcingContent = () => {
                                     </div>
 
                                     {item.product ? (() => {
-                                        const margin = onboardingState.marginType === '%'
-                                            ? Math.round(item.product.originalPriceKrw * (onboardingState.marginValue / 100))
-                                            : onboardingState.marginValue;
-                                        const krw = item.product.originalPriceKrw + margin + onboardingState.domesticShipping + onboardingState.prepCost;
-                                        const finalJpy = Math.round(krw / 9.2) + onboardingState.intlShipping;
-
                                         return (
                                             <div style={{ fontSize: '13px', color: colors.text.secondary, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ color: colors.text.muted }}>원가</span>
                                                 <span style={{ fontWeight: 600 }}>₩{item.product.originalPriceKrw.toLocaleString()}</span>
-                                                <span style={{ color: colors.border.default, margin: '0 4px' }}>|</span>
-                                                <span style={{ color: colors.text.muted }}>예상 판매가</span>
-                                                <span style={{ fontWeight: 600, color: colors.primary }}>¥{finalJpy.toLocaleString()}</span>
                                                 <span style={{ color: colors.border.default, margin: '0 4px' }}>|</span>
                                                 <span style={{ color: colors.text.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '240px' }}>{item.url}</span>
                                             </div>

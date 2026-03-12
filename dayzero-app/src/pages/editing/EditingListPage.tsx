@@ -327,12 +327,12 @@ export default function EditingListPage() {
             }}>
                 <Checkbox checked={allFilteredSelected} onClick={handleSelectAll} />
                 <div style={{ width: '48px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>이미지</div>
-                <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 3 }} />
-                <div style={{ flex: 1.2, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
-                <div style={{ width: '100px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600, paddingLeft: '4px' }}>무게</div>
-                <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '100px', flexShrink: 0 }} />
-                <div style={{ width: '90px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>원가</div>
-                <SortHeader label="등록일" sortKey="createdAt" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '72px', flexShrink: 0 }} />
+                <SortHeader label="상품명" sortKey="title" active={sortKey} dir={sortDir} onSort={handleSort} style={{ flex: 2.5 }} />
+                <div style={{ flex: 1.8, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>카테고리</div>
+                <div style={{ width: '70px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600, paddingLeft: '4px' }}>무게</div>
+                <SortHeader label="판매가" sortKey="salePriceJpy" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '90px', flexShrink: 0 }} />
+                <div style={{ width: '80px', flexShrink: 0, fontSize: font.size.xs, color: colors.text.muted, fontWeight: 600 }}>원가</div>
+                <SortHeader label="등록일" sortKey="createdAt" active={sortKey} dir={sortDir} onSort={handleSort} style={{ width: '65px', flexShrink: 0 }} />
             </div>
 
             {/* 상품 목록 */}

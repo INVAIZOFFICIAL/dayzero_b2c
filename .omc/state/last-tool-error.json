@@ -2,6 +2,6 @@
   "tool_name": "Read",
   "tool_input_preview": "{\"file_path\":\"/Users/invaiz/Documents/develop/dayzero_B2C/docs/04_화면별 기능 명세서.md\"}",
   "error": "File content (50957 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
-  "timestamp": "2026-03-11T10:07:22.316Z",
+  "timestamp": "2026-03-12T05:00:23.215Z",
   "retry_count": 1
 }

@@ -107,7 +107,7 @@ const WeightSection: React.FC<{
 
     return (
         <div
-            style={{ width: '100px', flexShrink: 0, position: 'relative' }}
+            style={{ width: '70px', flexShrink: 0, position: 'relative' }}
             onClick={(e) => e.stopPropagation()}
         >
             <div
@@ -168,9 +168,6 @@ export const ProductListItem: React.FC<Props> = ({
 
     // 한화 환산 계산
     const krwEquivalent = Math.round(product.salePriceJpy * EXCHANGE_RATE);
-
-    // 읽지 않은 항목은 파란색 배경 표시 (isRead 가 false 이거나 undefined 일 때)
-    const isUnread = product.isRead === false;
 
     const showTooltip = (e: React.MouseEvent, content: React.ReactNode) => {
         setTooltip({ x: e.clientX, y: e.clientY, content });
@@ -235,7 +232,7 @@ export const ProductListItem: React.FC<Props> = ({
 
             {/* 상품명 */}
             <div
-                style={{ flex: 3, minWidth: 0, display: 'flex', alignItems: 'center', gap: spacing['2'] }}
+                style={{ flex: 2.5, minWidth: 0, display: 'flex', alignItems: 'center', gap: spacing['2'] }}
                 onMouseMove={isTranslated ? (e) => showTooltip(e, (
                     <div>
                         <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>
@@ -306,15 +303,15 @@ export const ProductListItem: React.FC<Props> = ({
 
             {/* 카테고리 */}
             <div
-                style={{ flex: 1.2, minWidth: 0 }}
+                style={{ flex: 1.8, minWidth: 0 }}
                 onMouseMove={(e) => showTooltip(e, (
                     <div>
                         <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>
                             Qoo10 카테고리 전체 경로
                         </div>
-                        <div style={{ fontSize: font.size.md, fontWeight: 600, lineHeight: '1.4' }}>
+                        <span style={{ fontSize: font.size.sm, fontWeight: 500 }}>
                             {toKoCategory(product.qoo10CategoryPath)}
-                        </div>
+                        </span>
                     </div>
                 ))}
                 onMouseLeave={hideTooltip}
@@ -333,7 +330,7 @@ export const ProductListItem: React.FC<Props> = ({
 
             {/* 판매가 */}
             <div
-                style={{ width: '100px', flexShrink: 0 }}
+                style={{ width: '90px', flexShrink: 0 }}
                 onMouseMove={(e) => showTooltip(e, (
                     <div>
                         <div style={{ fontSize: font.size.xs, color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 500 }}>
@@ -357,12 +354,12 @@ export const ProductListItem: React.FC<Props> = ({
             </div>
 
             {/* 원가 */}
-            <div style={{ width: '90px', flexShrink: 0, fontSize: font.size.sm, color: colors.text.tertiary }}>
+            <div style={{ width: '80px', flexShrink: 0, fontSize: font.size.sm, color: colors.text.tertiary }}>
                 ₩{product.originalPriceKrw.toLocaleString()}
             </div>
 
             {/* 등록일 */}
-            <div style={{ width: '72px', flexShrink: 0, fontSize: font.size.sm, color: colors.text.tertiary }}>
+            <div style={{ width: '65px', flexShrink: 0, fontSize: font.size.sm, color: colors.text.tertiary }}>
                 {formatDate(product.createdAt)}
             </div>
 

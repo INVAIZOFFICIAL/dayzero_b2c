@@ -133,20 +133,74 @@
   "hotPaths": [
     {
       "path": "dayzero-app/src/pages/editing/EditingListPage.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1773229887808,
+      "accessCount": 10,
+      "lastAccessed": 1773269196973,
       "type": "file"
     },
     {
       "path": "dayzero-app/src/pages/editing/components/ProductListItem.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1773229874739,
+      "accessCount": 6,
+      "lastAccessed": 1773231813420,
       "type": "file"
     },
     {
       "path": "dayzero-app/src/store/useEditingStore.ts",
+      "accessCount": 6,
+      "lastAccessed": 1773269501196,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/design/tokens.ts",
+      "accessCount": 5,
+      "lastAccessed": 1773292123140,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/components/TranslationModal.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773231875575,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 4,
+      "lastAccessed": 1773269209735,
+      "type": "directory"
+    },
+    {
+      "path": "dayzero-app/src",
+      "accessCount": 4,
+      "lastAccessed": 1773269421069,
+      "type": "directory"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/tabs/BasicEditTab.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773275926692,
+      "type": "file"
+    },
+    {
+      "path": "docs/06_편집파트_개발_Plan.md",
       "accessCount": 3,
-      "lastAccessed": 1773223801989,
+      "lastAccessed": 1773269185979,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/App.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1773269569390,
+      "type": "file"
+    },
+    {
+      "path": "docs/04_화면별 기능 명세서.md",
+      "accessCount": 3,
+      "lastAccessed": 1773291631375,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/tabs/PriceEditTab.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1773292263876,
       "type": "file"
     },
     {
@@ -154,18 +208,6 @@
       "accessCount": 2,
       "lastAccessed": 1773223646719,
       "type": "directory"
-    },
-    {
-      "path": "docs/06_편집파트_개발_Plan.md",
-      "accessCount": 2,
-      "lastAccessed": 1773229109174,
-      "type": "file"
-    },
-    {
-      "path": "dayzero-app/src/pages/editing/components/TranslationModal.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773229114619,
-      "type": "file"
     },
     {
       "path": "dayzero-app/src/pages/editing/components/BulkActionBar.tsx",
@@ -180,6 +222,12 @@
       "type": "directory"
     },
     {
+      "path": "reviews/2026-03-11-ED-01-review.md",
+      "accessCount": 2,
+      "lastAccessed": 1773231528304,
+      "type": "file"
+    },
+    {
       "path": "dayzero-app/src/components/common/NotificationPanel.tsx",
       "accessCount": 1,
       "lastAccessed": 1773223682355,
@@ -192,27 +240,81 @@
       "type": "file"
     },
     {
-      "path": "docs/04_화면별 기능 명세서.md",
-      "accessCount": 1,
-      "lastAccessed": 1773229108293,
-      "type": "file"
-    },
-    {
       "path": "dayzero-app/src/pages/editing/components/CollectionProgressBanner.tsx",
       "accessCount": 1,
       "lastAccessed": 1773229115413,
       "type": "file"
     },
     {
-      "path": "dayzero-app/src/design/tokens.ts",
+      "path": "AGENTS.md",
       "accessCount": 1,
-      "lastAccessed": 1773229312846,
+      "lastAccessed": 1773230852460,
       "type": "file"
     },
     {
-      "path": "reviews/2026-03-11-ED-01-review.md",
+      "path": ".claude/settings.local.json",
       "accessCount": 1,
-      "lastAccessed": 1773229445090,
+      "lastAccessed": 1773231243966,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/types/editing.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773269200764,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/mock/editingMock.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773269206453,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/store/useToastStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773269258098,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/components/layout/MainLayout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773269258225,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/components/layout/Sidebar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773269421564,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages",
+      "accessCount": 1,
+      "lastAccessed": 1773269460237,
+      "type": "directory"
+    },
+    {
+      "path": "dayzero-app/src/store/useSourcingStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773269471893,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/components/EditingTabBar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773269510416,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/components/EditingHeader.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773269544383,
+      "type": "file"
+    },
+    {
+      "path": "dayzero-app/src/pages/editing/EditingDetailPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773269560487,
       "type": "file"
     }
   ],

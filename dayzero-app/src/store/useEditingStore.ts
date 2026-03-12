@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ProductDetail, TranslationJob, EditTabFilter, TranslationBatch, RegistrationBatch } from '../types/editing';
-import { PENDING_JA_TITLES } from '../mock/editingMock';
+import { MOCK_PRODUCTS, PENDING_JA_TITLES } from '../mock/editingMock';
 
 const PROVIDER_PREFIX_MAP: Record<string, string> = {
     '[위버스샵]': '[Weverse Shop]',
@@ -82,7 +82,7 @@ interface EditingState {
 }
 
 export const useEditingStore = create<EditingState>((set, get) => ({
-    products: [],
+    products: MOCK_PRODUCTS,
 
     selectedProductIds: [],
     activeTab: 'all',

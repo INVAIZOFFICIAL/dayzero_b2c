@@ -7,6 +7,7 @@ import SourcingPage from './pages/SourcingPage';
 import UrlSourcingPage from './pages/sourcing/UrlSourcingPage';
 import AutoSourcingPage from './pages/sourcing/AutoSourcingPage';
 import EditingListPage from './pages/editing/EditingListPage';
+import EditingDetailPage from './pages/editing/EditingDetailPage';
 import { OnboardingProvider } from './components/onboarding/OnboardingContext';
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
 
           {/* Editing Section */}
           <Route path="/editing" element={<EditingListPage />} />
+          <Route path="/editing/:productId" element={<EditingDetailPage />} />
 
           {/* Default redirect to splash */}
           <Route path="*" element={<Navigate to="/" replace />} />

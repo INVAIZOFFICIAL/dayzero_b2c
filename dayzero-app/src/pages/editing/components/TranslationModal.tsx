@@ -43,11 +43,11 @@ export const TranslationModal: React.FC<Props> = ({ isOpen, onClose, onStart, se
                     <div style={{
                         display: 'flex', alignItems: 'flex-start', gap: spacing['2'],
                         padding: spacing['3'], borderRadius: radius.md,
-                        background: '#FFFBEB', border: '1px solid #FDE68A',
+                        background: colors.warningLight, border: `1px solid ${colors.warningBorder}`,
                         marginBottom: spacing['4'],
                     }}>
-                        <AlertCircle size={16} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
-                        <p style={{ fontSize: font.size.sm, color: '#92400E', lineHeight: '1.5' }}>
+                        <AlertCircle size={16} color={colors.warningIcon} style={{ flexShrink: 0, marginTop: '1px' }} />
+                        <p style={{ fontSize: font.size.sm, color: colors.warningTextDark, lineHeight: '1.5' }}>
                             선택된 상품 중 <strong>{alreadyTranslatedCount}건</strong>은 이미 번역된 상품입니다.<br />계속하면 재번역됩니다.
                         </p>
                     </div>
