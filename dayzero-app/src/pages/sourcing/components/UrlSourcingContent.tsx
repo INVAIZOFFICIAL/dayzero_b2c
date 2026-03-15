@@ -321,7 +321,8 @@ const orgPrice = Math.floor(Math.random() * 20000) + 15000;
                 <div>
                     <h3 style={{ fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '4px' }}>URL 수집이란?</h3>
                     <p style={{ fontSize: '14px', color: colors.text.secondary, lineHeight: '1.5' }}>
-                        원하는 특정 상품의 상세 페이지 주소(URL)를 직접 입력하여 리스트 형태로 수집하는 기능이에요. 주소를 입력하고 엔터(Enter)나 스페이스바를 누르거나, 여러 개의 주소를 한 번에 붙여넣기 하여 최대 20개까지 추가할 수 있어요.
+                        원하는 특정 상품의 상세 페이지 주소(URL)를 직접 입력하여 리스트 형태로 수집하는 기능이에요.<br />
+                        주소를 입력하고 엔터(Enter)나 스페이스바를 누르거나, 여러 개의 주소를 한 번에 붙여넣기 하여 최대 20개까지 추가할 수 있어요.
                     </p>
                 </div>
             </div>
