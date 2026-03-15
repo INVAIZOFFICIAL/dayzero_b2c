@@ -319,7 +319,7 @@ export const RegistrationResultPage: React.FC = () => {
                 )}
 
                 {/* 변동 확인 콜아웃 (모든 탭) */}
-                {hasAnyMonitoring && (
+                {allSuccessResults.length > 0 && (
                     <MonitoringInfoCallout
                         monitoringCount={monitoringCounts.monitoring}
                         limit={FREE_PLAN_LIMIT}
