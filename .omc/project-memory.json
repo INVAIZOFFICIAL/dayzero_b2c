@@ -148,8 +148,8 @@
     },
     {
       "path": "dayzero-app/src/pages/registration/RegistrationResultPage.tsx",
-      "accessCount": 15,
-      "lastAccessed": 1773482760025,
+      "accessCount": 18,
+      "lastAccessed": 1773627916242,
       "type": "file"
     },
     {
@@ -160,14 +160,14 @@
     },
     {
       "path": "dayzero-app/src/pages/registration/components/SuccessSummaryCard.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1773482793625,
+      "accessCount": 11,
+      "lastAccessed": 1773627894851,
       "type": "file"
     },
     {
       "path": "dayzero-app/src/pages/registration/components/AllProductsTable.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1773465481906,
+      "accessCount": 8,
+      "lastAccessed": 1773627919867,
       "type": "file"
     },
     {
@@ -294,6 +294,12 @@
       "path": "dayzero-app/src/components",
       "accessCount": 1,
       "lastAccessed": 1773482468917,
+      "type": "directory"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1773627892657,
       "type": "directory"
     }
   ],
