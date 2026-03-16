@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, Search, Check, X, Loader2, PenLine, Languages, CheckCircle2, Info } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, Search, Check, X, Loader2, PenLine, Languages, CheckCircle2, Info } from 'lucide-react';
 import type { ProductDetail, ProductOption } from '../../../types/editing';
 import { useEditingStore } from '../../../store/useEditingStore';
 import { QOO10_CATEGORY_KO, toKoCategory } from '../../../mock/categoryMap';
@@ -68,41 +68,6 @@ const KoTooltip: React.FC<{ pos: { x: number; y: number }; text: string }> = ({ 
         }}>
             <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: font.size.xs, marginBottom: '4px', fontWeight: 500 }}>한국어 원문</div>
             <div style={{ whiteSpace: 'normal', lineHeight: 1.4, fontWeight: 600 }}>{text}</div>
-        </div>
-    );
-};
-
-// ── 한국어 원문 토글 (상세설명 전용) ────────────────────────────────────────
-const KoToggle: React.FC<{ text: string }> = ({ text }) => {
-    const [open, setOpen] = useState(false);
-    return (
-        <div style={{ marginTop: '10px' }}>
-            <button
-                onClick={() => setOpen(v => !v)}
-                style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: font.size.sm, color: colors.text.muted, padding: 0,
-                    transition: 'color 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = colors.text.secondary)}
-                onMouseLeave={e => (e.currentTarget.style.color = colors.text.muted)}
-            >
-                {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                한국어 원문 {open ? '접기' : '보기'}
-            </button>
-            {open && (
-                <div style={{
-                    marginTop: spacing['2'], padding: `${spacing['3']} ${spacing['4']}`,
-                    background: colors.bg.subtle, borderRadius: radius.md,
-                    borderLeft: `3px solid ${colors.border.light}`,
-                    fontSize: font.size.sm, color: colors.text.secondary,
-                    lineHeight: font.lineHeight.relaxed, whiteSpace: 'pre-wrap',
-                    animation: 'koIn 0.16s ease',
-                }}>
-                    {text}
-                </div>
-            )}
         </div>
     );
 };

@@ -101,16 +101,6 @@ export const UrlSourcingContent = () => {
 
             await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 2500));
 
-            let isProductUrl = true;
-            try {
-                const urlObj = new URL(current.url);
-                if (urlObj.pathname === '/' || urlObj.pathname === '') {
-                    isProductUrl = false;
-                }
-            } catch (e) {
-                isProductUrl = false;
-            }
-
             const isSuccess = true;
 
             if (isSuccess) {
