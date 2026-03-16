@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Edit3, PackageOpen, ChevronRight } from 'lucide-react';
+import { Search, LayoutList, PackageOpen, ChevronRight } from 'lucide-react';
 import { useSourcingStore } from '../../store/useSourcingStore';
 
-type NavItem = '수집하기' | '편집하기' | '판매 중인 상품';
+type NavItem = '수집하기' | '수집 목록' | '판매 중인 상품';
 
 export const Sidebar: React.FC = () => {
     const navigate = useNavigate();
@@ -30,7 +30,7 @@ export const Sidebar: React.FC = () => {
     const handleNav = (item: NavItem) => {
         if (item === '수집하기') {
             navigate('/sourcing');
-        } else if (item === '편집하기') {
+        } else if (item === '수집 목록') {
             navigate('/editing');
         } else if (item === '판매 중인 상품') {
             navigate('/registration');
@@ -92,7 +92,7 @@ export const Sidebar: React.FC = () => {
                 </button>
 
                 <button
-                    onClick={() => handleNav('편집하기')}
+                    onClick={() => handleNav('수집 목록')}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -112,8 +112,8 @@ export const Sidebar: React.FC = () => {
                     onMouseOver={(e) => { if (!isEditingActive) e.currentTarget.style.background = '#F2F4F6'; }}
                     onMouseOut={(e) => { if (!isEditingActive) e.currentTarget.style.background = 'transparent'; }}
                 >
-                    <Edit3 size={20} color={isEditingActive ? '#191F28' : '#8B95A1'} />
-                    편집하기
+                    <LayoutList size={20} color={isEditingActive ? '#191F28' : '#8B95A1'} />
+                    수집 목록
                     {isEditingActive && <ChevronRight size={16} color="#B0B8C1" style={{ marginLeft: 'auto' }} />}
                     {!isEditingActive && unprocessedProductCount > 0 && (
                         <div
