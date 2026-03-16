@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, Search, Check, X, Loader2, PenLine, Languages } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Search, Check, X, Loader2, PenLine, Languages, CheckCircle2, Info } from 'lucide-react';
 import type { ProductDetail, ProductOption } from '../../../types/editing';
 import { useEditingStore } from '../../../store/useEditingStore';
 import { QOO10_CATEGORY_KO, toKoCategory } from '../../../mock/categoryMap';
 import { PENDING_JA_TITLES } from '../../../mock/editingMock';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
-import { stripPrefix, toJaTitle, mockTranslateOption as mockTranslateOpt } from '../../../utils/editing';
+import { stripPrefix, toJaTitle, mockTranslateOption as mockTranslateOpt, hasKorean } from '../../../utils/editing';
 import { handleImgError } from '../../../utils/image';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
 
@@ -121,7 +121,7 @@ const AIButton: React.FC<{
     disabled?: boolean;
     size?: 'sm' | 'md';
     icon?: React.ReactNode;
-}> = ({ loading, onClick, label = 'AI 편집', loadingLabel = '처리 중...', disabled = false, size = 'md', icon = <Languages size={13} /> }) => {
+}> = ({ loading, onClick, label = 'AI 번역', loadingLabel = '처리 중...', disabled = false, size = 'md', icon = <Languages size={13} /> }) => {
     const isDisabled = loading || disabled;
     return (
         <button
@@ -282,11 +282,12 @@ const OptionRow: React.FC<{
 }> = ({ option, imageUrl, isTranslating, onChange, onDelete }) => {
     const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const hasNameJa = !isTranslating && !!option.nameJa;
 
     return (
         <div style={{
             display: 'grid', gridTemplateColumns: '44px 1fr 90px 36px',
-            alignItems: 'center', gap: spacing['3'],
+            alignItems: 'start', gap: spacing['3'],
             paddingBottom: spacing['3'],
             marginBottom: spacing['3'],
             borderBottom: `1px solid ${colors.border.default}`,
@@ -297,6 +298,7 @@ const OptionRow: React.FC<{
                     width: '44px', height: '44px',
                     borderRadius: radius.md, objectFit: 'cover',
                     border: `1px solid ${colors.border.default}`, flexShrink: 0,
+                    marginTop: '2px',
                 }} />
 
             {/* 옵션명 입력 (hover → 한국어 원문 툴팁) */}
@@ -327,6 +329,12 @@ const OptionRow: React.FC<{
                         onBlur={e => (e.target.style.borderColor = colors.border.default)}
                     />
                 )}
+                {!hasNameJa && (
+                    <p style={{ margin: `${spacing['1']} 0 0`, display: 'flex', alignItems: 'center', gap: '4px', fontSize: font.size.xs, color: colors.warningIcon }}>
+                        <Info size={12} style={{ flexShrink: 0 }} />
+                        큐텐에 표시될 일본어 옵션 이름이 필요해요. AI 번역 버튼으로 빠르게 완성할 수 있어요.
+                    </p>
+                )}
                 {tooltip && option.nameKo && (
                     <KoTooltip pos={tooltip} text={option.nameKo} />
                 )}
@@ -337,7 +345,7 @@ const OptionRow: React.FC<{
                 value={option.stock}
                 onChange={e => onChange('stock', Number(e.target.value))}
                 className="stock-input"
-                style={{ ...inputBase, textAlign: 'left' }}
+                style={{ ...inputBase, textAlign: 'left', marginTop: '2px' }}
                 onFocus={e => (e.target.style.borderColor = colors.primary)}
                 onBlur={e => (e.target.style.borderColor = colors.border.default)}
             />
@@ -349,6 +357,7 @@ const OptionRow: React.FC<{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: colors.text.muted, borderRadius: radius.sm,
                     padding: '6px', width: '100%', transition: 'color 0.15s',
+                    marginTop: '2px',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = colors.danger)}
                 onMouseLeave={e => (e.currentTarget.style.color = colors.text.muted)}
@@ -381,12 +390,13 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
     const [titleTooltip, setTitleTooltip] = useState<{ x: number; y: number } | null>(null);
 
     const [isTranslatingTitle, setIsTranslatingTitle] = useState(false);
+    const [titleKoEdited, setTitleKoEdited] = useState(false);
     const [isWritingDesc, setIsWritingDesc] = useState(false);
     const [isTranslatingDesc, setIsTranslatingDesc] = useState(false);
-    const _hasAIDraft = !!product.descriptionKo && product.descriptionKo.includes('【');
-    const [descKo, setDescKo] = useState(_hasAIDraft ? product.descriptionKo : '');
+    const hasAIDraft = !!product.descriptionKo && product.descriptionKo.includes('【');
+    const [descKo, setDescKo] = useState(hasAIDraft ? product.descriptionKo : '');
     const [descMode, setDescMode] = useState<'ko' | 'ja'>(
-        product.descriptionJa ? 'ja' : (_hasAIDraft ? 'ko' : 'ja')
+        product.descriptionJa ? 'ja' : (hasAIDraft ? 'ko' : 'ja')
     );
     const [showWriteConfirm, setShowWriteConfirm] = useState(false);
     const [showTranslateTooltip, setShowTranslateTooltip] = useState(false);
@@ -418,6 +428,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
         setShowTranslateTooltip(false);
         setTranslatingOptionIds(new Set());
         setTitleTooltip(null);
+        setTitleKoEdited(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [product.id]);
 
@@ -470,6 +481,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
             const translatedTitle = stripPrefix(raw);
             setTitleJa(translatedTitle);
             setIsTranslatingTitle(false);
+            setTitleKoEdited(false);
             updateProduct(product.id, { titleJa: translatedTitle });
         }, 2500 + Math.random() * 1000);
     };
@@ -562,7 +574,13 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
         product.thumbnails[idx]?.url ?? product.thumbnailUrl;
 
     const isTranslatingAnyOption = translatingOptionIds.size > 0;
-    const hasJaTitle = !!titleJa && titleJa !== stripPrefix(product.titleKo);
+    const allOptionsDone = options.length > 0 && options.every(o => !!o.nameJa);
+    const titleJaHasKorean = hasKorean(titleJa);
+    const descJaHasKorean = hasKorean(descJa);
+    const hasJaTitle = !!titleJa && titleJa !== stripPrefix(product.titleKo) && !titleJaHasKorean;
+    const isDescDone = !!descJa && !descJaHasKorean;
+    // titleJa가 null이거나 titleKoEdited가 true이면 AI 번역 버튼 활성화
+    const titleTranslateDisabled = hasJaTitle && !titleKoEdited;
 
     return (
         <div style={{ maxWidth: '760px' }}>
@@ -581,7 +599,13 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
             {/* ── 상품명 ── */}
             <div>
                 <div style={{ ...flexBetween, marginBottom: spacing['2'] }}>
-                    <span style={sectionLabelStyle}>상품명</span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={sectionLabelStyle}>상품명</span>
+                        {hasJaTitle
+                            ? <CheckCircle2 size={14} color={colors.success} style={{ marginLeft: '4px' }} />
+                            : <span style={{ fontSize: font.size.base, color: colors.warningIcon, fontWeight: 700, marginLeft: '4px', lineHeight: 1 }}>*</span>
+                        }
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2'] }}>
                         {saveStatus === 'saving' && (
                             <span style={{ fontSize: font.size.xs, color: colors.text.muted }}>저장 중...</span>
@@ -591,11 +615,11 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                         )}
                         <div
                             style={{ position: 'relative' }}
-                            onMouseEnter={e => { if (hasJaTitle) (e.currentTarget.querySelector('[data-title-tip]') as HTMLElement)?.style.setProperty('display', 'block'); }}
+                            onMouseEnter={e => { if (titleTranslateDisabled) (e.currentTarget.querySelector('[data-title-tip]') as HTMLElement)?.style.setProperty('display', 'block'); }}
                             onMouseLeave={e => { (e.currentTarget.querySelector('[data-title-tip]') as HTMLElement)?.style.setProperty('display', 'none'); }}
                         >
-                            <AIButton loading={isTranslatingTitle} onClick={handleTranslateTitle} label="AI 편집" disabled={hasJaTitle} />
-                            {hasJaTitle && (
+                            <AIButton loading={isTranslatingTitle} onClick={handleTranslateTitle} label="AI 번역" disabled={titleTranslateDisabled} />
+                            {titleTranslateDisabled && (
                                 <div
                                     data-title-tip=""
                                     style={{
@@ -641,7 +665,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                             type="text"
                             value={titleJa}
                             onChange={e => { setTitleJa(e.target.value); triggerSave(); }}
-                            placeholder={titleJa ? '일본어 상품명을 수정하세요' : 'AI 편집 버튼을 눌러 자동 번역하거나 직접 입력하세요'}
+                            placeholder={titleJa ? '일본어 상품명을 수정하세요' : 'AI 번역 버튼을 눌러 자동 번역하거나 직접 입력하세요'}
                             style={inputBase}
                             onFocus={e => { e.target.style.borderColor = colors.primary; setTitleTooltip(null); }}
                             onBlur={e => (e.target.style.borderColor = colors.border.default)}
@@ -649,6 +673,12 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                     )}
                     {titleTooltip && hasJaTitle && (
                         <KoTooltip pos={titleTooltip} text={stripPrefix(product.titleKo)} />
+                    )}
+                    {!hasJaTitle && (
+                        <p style={{ margin: `${spacing['1']} 0 0`, display: 'flex', alignItems: 'center', gap: '4px', fontSize: font.size.xs, color: colors.warningIcon }}>
+                            <Info size={12} style={{ flexShrink: 0 }} />
+                            일본어 상품명을 번역해 주세요. 우측 AI 번역 버튼을 누르면 자동으로 번역해 드려요.
+                        </p>
                     )}
                 </div>
             </div>
@@ -687,14 +717,17 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
             {/* ── 옵션 ── */}
             <div>
                 <div style={{ ...flexBetween, marginBottom: spacing['3'] }}>
-                    <span style={sectionLabelStyle}>
-                        옵션
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={sectionLabelStyle}>옵션</span>
+                        {allOptionsDone
+                            ? <CheckCircle2 size={14} color={colors.success} style={{ marginLeft: '4px' }} />
+                            : <span style={{ fontSize: font.size.base, color: colors.warningIcon, fontWeight: 700, marginLeft: '4px', lineHeight: 1 }}>*</span>
+                        }
                         <span style={{ fontSize: font.size.xs, color: colors.text.muted, fontWeight: 500, marginLeft: spacing['2'] }}>
                             {options.length}개
                         </span>
-                    </span>
+                    </div>
                     {(() => {
-                        const allOptionsDone = options.length > 0 && options.every(o => !!o.nameJa);
                         return (
                             <div
                                 style={{ position: 'relative' }}
@@ -704,7 +737,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                                 <AIButton
                                     loading={isTranslatingAnyOption}
                                     onClick={handleTranslateOptions}
-                                    label="AI 편집"
+                                    label="AI 번역"
                                     disabled={allOptionsDone}
                                 />
                                 {allOptionsDone && (
@@ -781,6 +814,11 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                 <div style={{ ...flexBetween, marginBottom: spacing['2'] }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2'] }}>
                         <span style={sectionLabelStyle}>상세설명</span>
+                        {isDescDone ? (
+                            <CheckCircle2 size={14} color={colors.success} />
+                        ) : (
+                            <span style={{ fontSize: font.size.sm, color: colors.warningIcon, fontWeight: 700, lineHeight: 1 }}>*</span>
+                        )}
                         {descMode === 'ko' && (
                             <span style={{ fontSize: font.size.xs, color: colors.text.muted, background: colors.bg.subtle, padding: '2px 7px', borderRadius: radius.full }}>
                                 한국어 초안
@@ -799,7 +837,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                             onMouseEnter={() => { if (!descKo.trim() || !!descJa) setShowTranslateTooltip(true); }}
                             onMouseLeave={() => setShowTranslateTooltip(false)}
                         >
-                            <AIButton loading={isTranslatingDesc} onClick={handleTranslateDesc} label="AI 편집" loadingLabel="번역 중..." disabled={!descKo.trim() || !!descJa} icon={<Languages size={13} />} />
+                            <AIButton loading={isTranslatingDesc} onClick={handleTranslateDesc} label="AI 번역" loadingLabel="번역 중..." disabled={!descKo.trim() || !!descJa} icon={<Languages size={13} />} />
                             {showTranslateTooltip && (!descKo.trim() || !!descJa) && (
                                 <div style={{
                                     position: 'absolute', top: 'calc(100% + 6px)', right: 0,
@@ -843,7 +881,7 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                                     }
                                 }}
                                 placeholder={
-                                    descMode === 'ko' ? '수정 후 AI 편집 버튼을 눌러 일본어로 변환하세요' :
+                                    descMode === 'ko' ? '수정 후 AI 번역 버튼을 눌러 일본어로 변환하세요' :
                                     product.translationStatus === 'completed' ? '일본어 상세설명을 수정하세요' :
                                     'AI 작성 버튼으로 한국어 초안을 만들거나 직접 입력하세요'
                                 }
@@ -865,7 +903,12 @@ export const BasicEditTab: React.FC<Props> = ({ product }) => {
                         </>
                     )}
                 </div>
-                {product.descriptionKo && descMode === 'ja' && !descJa && <KoToggle text={product.descriptionKo} />}
+                {(!descJa || descJaHasKorean) && !isWritingDesc && !isTranslatingDesc && (
+                    <p style={{ margin: `${spacing['1']} 0 0`, display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: font.size.xs, color: colors.warningIcon }}>
+                        <Info size={12} style={{ flexShrink: 0, marginTop: '1px' }} />
+                        일본어 상세설명을 작성해 주세요. 어렵다면 AI 작성 버튼을 활용해 보세요.
+                    </p>
+                )}
             </div>
 
             <ConfirmModal

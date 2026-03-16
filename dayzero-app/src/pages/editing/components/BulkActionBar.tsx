@@ -1,4 +1,4 @@
-import { Languages, Trash2, Upload, X } from 'lucide-react';
+import { Sparkles, Trash2, Upload, X } from 'lucide-react';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
 
 interface Props {
@@ -86,7 +86,7 @@ export const BulkActionBar: React.FC<Props> = ({
                         cursor: translateCount > 0 ? 'pointer' : 'default',
                     }}
                 >
-                    <Languages size={16} />
+                    <Sparkles size={16} />
                     AI로 편집하기 ({translateCount})
                 </button>
                 {translateCount === 0 && selectedCount > 0 && (

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Loader2, Check, Globe, Sparkles } from 'lucide-react';
+import { Loader2, Check, Globe, Sparkles, Info, AlertCircle } from 'lucide-react';
 import type { ProductDetail } from '../../../types/editing';
 import { getProviderLogo } from '../../../types/sourcing';
 import { Checkbox } from '../../../components/common/Checkbox';
 import { SOURCE_TAG_STYLES } from '../../../components/common/SourceTag';
 import { toKoCategory, shortKoCategory, EXCHANGE_RATE } from '../../../mock/categoryMap';
 import { colors, font, radius, shadow, spacing, zIndex } from '../../../design/tokens';
-import { stripPrefix } from '../../../utils/editing';
+import { stripPrefix, hasKorean } from '../../../utils/editing';
 
 const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -131,7 +131,7 @@ const WeightSection: React.FC<{
                 {hasWeight ? (
                     <span>{product.weightKg}<span style={{ fontSize: font.size['2xs+'], marginLeft: '2px', opacity: 0.6, fontWeight: 500 }}>kg</span></span>
                 ) : (
-                    <span style={{ fontSize: '12px', fontWeight: 600 }}>무게 설정 필요</span>
+                    <span style={{ fontSize: font.size.xs, fontWeight: 600 }}>무게 설정 필요</span>
                 )}
 
                 {tag && (
@@ -155,6 +155,10 @@ export const ProductListItem: React.FC<Props> = ({
 
     const isProcessing = product.translationStatus === 'processing' || !!product.isReTranslating;
     const isTranslated = !!product.titleJa;
+    const titleDone = !!product.titleJa && !hasKorean(product.titleJa);
+    const optionsDone = product.options.length > 0 && product.options.every(o => !!o.nameJa);
+    const descDone = !!product.descriptionJa;
+    const allDone = titleDone && optionsDone && descDone;
     const displayTitle = product.titleJa
         ? stripPrefix(product.titleJa)
         : stripPrefix(product.titleKo);
@@ -294,36 +298,73 @@ export const ProductListItem: React.FC<Props> = ({
                         </span>
                     )}
                 </div>
-                {/* 번역/작성 상태 태그 */}
-                {(() => {
-                    const titleDone = !!product.titleJa;
-                    const optionsDone = product.options.length > 0 && product.options.every(o => !!o.nameJa);
-                    const descDone = !!product.descriptionJa;
-const tags: { label: string; done: boolean }[] = [
-                        { label: '상품명', done: titleDone },
-                        { label: '옵션', done: optionsDone },
-                        { label: '상세설명', done: descDone },
-                    ];
-                    return (
-                        <div style={{ display: 'flex', gap: '4px', marginTop: '5px', paddingLeft: '26px' }}>
-                            {tags.map(tag => (
-                                <span
-                                    key={tag.label}
-                                    style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '2px',
-                                        padding: '1px 6px',
-                                        borderRadius: radius.full,
-                                        fontSize: font.size['2xs+'],
-                                        fontWeight: 600,
-                                        background: tag.done ? colors.successLight : colors.bg.subtle,
-                                        color: tag.done ? colors.success : colors.text.muted,
-                                        lineHeight: '1.6',
-                                    }}
-                                >
-                                    {tag.done && <Check size={9} strokeWidth={3} />}
-                                    {tag.label}
+                {/* 남은 할 일 칩 (미완료 항목만 표시) */}
+                {!isProcessing && (() => {
+
+                    if (allDone) {
+                        return (
+                            <div style={{ display: 'flex', marginTop: '5px', paddingLeft: '26px' }}>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                    padding: '2px 8px', borderRadius: radius.full,
+                                    fontSize: font.size.xs, fontWeight: 600,
+                                    background: colors.successLight, color: colors.success,
+                                }}>
+                                    <Check size={10} strokeWidth={3} />
+                                    등록 준비 완료
                                 </span>
-                            ))}
+                            </div>
+                        );
+                    }
+
+                    const allItems = [
+                        { label: '상품명 번역', done: titleDone },
+                        { label: '옵션 번역', done: optionsDone },
+                        { label: '상세설명 작성 및 번역', done: descDone },
+                    ];
+
+                    const tooltipContent = (
+                        <div style={{ minWidth: '210px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: font.size.sm, fontWeight: 700, marginBottom: '10px' }}>
+                                <Info size={13} style={{ flexShrink: 0 }} />
+                                등록하기 전에 편집이 필요해요.
+                            </div>
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {allItems.map(item => (
+                                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                                        <span style={{ fontSize: font.size.xs, fontWeight: 500, color: item.done ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>
+                                            {item.label}
+                                        </span>
+                                        {item.done
+                                            ? <Check size={12} strokeWidth={2.5} color={colors.success} style={{ flexShrink: 0 }} />
+                                            : <AlertCircle size={12} strokeWidth={2} color={colors.warningIcon} style={{ flexShrink: 0 }} />
+                                        }
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+
+                    return (
+                        <div style={{ display: 'flex', marginTop: '5px', paddingLeft: '26px' }}>
+                            <span
+                                onMouseMove={(e) => showTooltip(e, tooltipContent)}
+                                onMouseLeave={hideTooltip}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    padding: '2px 8px', borderRadius: radius.full,
+                                    fontSize: font.size.xs, fontWeight: 500,
+                                    background: colors.warningLight, color: colors.warningIcon,
+                                    cursor: 'default',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                <Info size={10} style={{ flexShrink: 0 }} />
+                                {[
+                                    !titleDone && '상품명',
+                                    !optionsDone && '옵션',
+                                    !descDone && '상세설명',
+                                ].filter(Boolean).join(' / ')}
+                            </span>
                         </div>
                     );
                 })()}

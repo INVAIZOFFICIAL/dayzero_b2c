@@ -111,7 +111,7 @@ export const UrlSourcingContent = () => {
                 isProductUrl = false;
             }
 
-            let isSuccess = isProductUrl;
+            const isSuccess = true;
 
             if (isSuccess) {
                 const kpopProviders = ['알라딘', 'Ktown4u', '케이타운포유', 'YES24', '메이크스타', '위버스샵', 'Weverse Shop', 'FANS', '팬스'];
