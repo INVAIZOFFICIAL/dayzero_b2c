@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ExternalLink, Check, Shield, AlertTriangle, PackageX, TrendingDown, Minus } from 'lucide-react';
+import { ExternalLink, Check, Shield, AlertTriangle, PackageX, TrendingDown, Minus, ShoppingBag } from 'lucide-react';
 import { colors, font, spacing, radius, shadow, zIndex } from '../../../design/tokens';
 import { getProviderLogo } from '../../../types/sourcing';
 import { stripPrefix } from '../../../utils/editing';
@@ -109,8 +109,26 @@ export const AllProductsTable: React.FC<Props> = ({
 
     if (results.length === 0) {
         return (
-            <div style={{ textAlign: 'center', padding: `${spacing['12']} 0`, color: colors.text.muted, fontSize: font.size.base }}>
-                {emptyMessage}
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: `${spacing['16']} 0`, gap: spacing['3'],
+            }}>
+                <div style={{
+                    width: '52px', height: '52px',
+                    borderRadius: radius.xl,
+                    background: colors.bg.subtle,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <ShoppingBag size={24} color={colors.text.muted} />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: font.size.base, fontWeight: 600, color: colors.text.secondary, marginBottom: spacing['1'] }}>
+                        {emptyMessage}
+                    </div>
+                    <div style={{ fontSize: font.size.sm, color: colors.text.muted }}>
+                        수집 목록에서 상품을 편집하고 Qoo10에 등록해 보세요.
+                    </div>
+                </div>
             </div>
         );
     }

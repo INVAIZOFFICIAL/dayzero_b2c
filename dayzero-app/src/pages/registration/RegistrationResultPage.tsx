@@ -310,21 +310,17 @@ export const RegistrationResultPage: React.FC = () => {
                 )}
 
                 {/* 모니터링 상태 탭 */}
-                {allSuccessResults.length > 0 && (
-                    <MonitoringStatusTabs
-                        activeTab={monitoringTab}
-                        onChange={handleTabChange}
-                        counts={monitoringCounts}
-                    />
-                )}
+                <MonitoringStatusTabs
+                    activeTab={monitoringTab}
+                    onChange={handleTabChange}
+                    counts={monitoringCounts}
+                />
 
                 {/* 변동 확인 콜아웃 (모든 탭) */}
-                {allSuccessResults.length > 0 && (
-                    <MonitoringInfoCallout
-                        monitoringCount={monitoringCounts.monitoring}
-                        limit={FREE_PLAN_LIMIT}
-                    />
-                )}
+                <MonitoringInfoCallout
+                    monitoringCount={monitoringCounts.monitoring}
+                    limit={FREE_PLAN_LIMIT}
+                />
 
                 {/* 검색 */}
                 <div style={{
