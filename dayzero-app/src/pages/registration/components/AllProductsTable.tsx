@@ -111,7 +111,7 @@ export const AllProductsTable: React.FC<Props> = ({
         return (
             <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: `${spacing['16']} 0`, gap: spacing['3'],
+                padding: `${spacing['20']} 0`, gap: spacing['3'],
             }}>
                 <div style={{
                     width: '52px', height: '52px',

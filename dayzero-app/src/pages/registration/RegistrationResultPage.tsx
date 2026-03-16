@@ -305,7 +305,7 @@ export const RegistrationResultPage: React.FC = () => {
                 )}
 
                 {/* 성과 요약 (프로그레스 없을 때만) */}
-                {!progressJob && allSuccessResults.length > 0 && (
+                {!progressJob && (
                     <SuccessSummaryCard results={allSuccessResults} />
                 )}
 
@@ -322,27 +322,29 @@ export const RegistrationResultPage: React.FC = () => {
                     limit={FREE_PLAN_LIMIT}
                 />
 
-                {/* 검색 */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: spacing['2'],
-                    padding: `0 ${spacing['3']}`,
-                    border: `1px solid ${colors.border.default}`,
-                    borderRadius: radius.md, background: colors.bg.surface,
-                    marginBottom: spacing['3'],
-                }}>
-                    <Search size={16} color={colors.text.muted} />
-                    <input
-                        type="text"
-                        placeholder="상품명 또는 상품번호로 검색"
-                        value={searchKeyword}
-                        onChange={(e) => setSearchKeyword(e.target.value)}
-                        style={{
-                            flex: 1, border: 'none', outline: 'none',
-                            fontSize: font.size.base, color: colors.text.primary,
-                            padding: `${spacing['3']} 0`, background: 'transparent',
-                        }}
-                    />
-                </div>
+                {/* 검색 (상품이 있을 때만) */}
+                {allSuccessResults.length > 0 && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: spacing['2'],
+                        padding: `0 ${spacing['3']}`,
+                        border: `1px solid ${colors.border.default}`,
+                        borderRadius: radius.md, background: colors.bg.surface,
+                        marginBottom: spacing['3'],
+                    }}>
+                        <Search size={16} color={colors.text.muted} />
+                        <input
+                            type="text"
+                            placeholder="상품명 또는 상품번호로 검색"
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                            style={{
+                                flex: 1, border: 'none', outline: 'none',
+                                fontSize: font.size.base, color: colors.text.primary,
+                                padding: `${spacing['3']} 0`, background: 'transparent',
+                            }}
+                        />
+                    </div>
+                )}
 
                 {/* 소싱처 필터 */}
                 {tabFilteredResults.length > 0 && (
